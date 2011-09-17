@@ -3,6 +3,8 @@
 #include "imageeditor.h"
 #include "logic.h"
 
+#include <QDebug>
+
 ImageEditor::ImageEditor()
 {
     imageLabel = new QLabel;
@@ -21,7 +23,7 @@ ImageEditor::ImageEditor()
     setWindowTitle(tr("Image Editor"));
     resize(800, 600);
 
-    image = new QImage(tr("Lenna.png"));
+    image = static_cast<ImageLogic*>(new QImage(tr("test/Lenna.png")));
     imageLabel->setPixmap(QPixmap::fromImage(*image));
     imageLabel->adjustSize();
 }
@@ -30,7 +32,7 @@ void ImageEditor::open()
 {
     QString fileName = QFileDialog::getOpenFileName(this, tr("Open File"), QDir::currentPath());
     if (!fileName.isEmpty()) {
-        image = new QImage(fileName);
+        image = static_cast<ImageLogic*>(new QImage(fileName));
         if (image->isNull()) {
             QMessageBox::information(this, tr("Image Viewer"), tr("Cannot load %1.").arg(fileName));
             return;
@@ -65,11 +67,38 @@ void ImageEditor::createActions()
     saveAct->setShortcut(tr("Ctrl+S"));
     connect(saveAct, SIGNAL(triggered()), this, SLOT(save()));
 
-    lCorrAct = new QAction(tr("Autocontrast"), this);
-    connect(lCorrAct, SIGNAL(triggered()), this, SLOT(linearCorrection()));
+    linearCorrAct = new QAction(tr("Autocontrast"), this);
+    connect(linearCorrAct, SIGNAL(triggered()), this, SLOT(linearCorr()));
 
-    chCorAct = new QAction(tr("Per Channel Autocontrast"), this);
-    connect(chCorAct, SIGNAL(triggered()), this, SLOT(channelLinearCorrection()));
+    channelCorrAct = new QAction(tr("Per Channel Autocontrast"), this);
+    connect(channelCorrAct, SIGNAL(triggered()), this, SLOT(channelCorr()));
+
+    gaussianAct = new QAction(tr("Gaussian Filter"), this);
+    connect(gaussianAct, SIGNAL(triggered()), this, SLOT(gaussian()));
+}
+
+void ImageEditor::channelCorr()
+{
+    image->channelCorrection();
+
+    imageLabel->setPixmap(QPixmap::fromImage(*image));
+    imageLabel->adjustSize();
+}
+
+void ImageEditor::linearCorr()
+{
+    image->linearCorrection();
+
+    imageLabel->setPixmap(QPixmap::fromImage(*image));
+    imageLabel->adjustSize();
+}
+
+void ImageEditor::gaussian()
+{
+    image->gaussianFilter(1);
+
+    imageLabel->setPixmap(QPixmap::fromImage(*image));
+    imageLabel->adjustSize();
 }
 
 void ImageEditor::createMenus()
@@ -83,102 +112,11 @@ void ImageEditor::createMenus()
     viewMenu = new QMenu(tr("&View"), this);
 
     editMenu = new QMenu(tr("&Edit"), this);
-    editMenu->addAction(lCorrAct);
-    editMenu->addAction(chCorAct);
+    editMenu->addAction(linearCorrAct);
+    editMenu->addAction(channelCorrAct);
+    editMenu->addAction(gaussianAct);
 
     menuBar()->addMenu(fileMenu);
     menuBar()->addMenu(viewMenu);
     menuBar()->addMenu(editMenu);
-}
-
-int ImageEditor::checkBound(int i) {
-    if (i < 0)
-        return 0;
-    if (i > 255)
-        return 255;
-    return i;
-}
-
-void ImageEditor::linearCorrection()
-{
-    int lmax = 0;
-    int lmin = INT_MAX;
-
-    for (int x = 0; x < image->width(); x++) {
-        for (int y = 0; y < image->height(); y++) {
-            QRgb p = image->pixel(x, y);
-
-            int l = 0.2125d * qRed(p) + 0.7154d * qGreen(p) + 0.0721d * qBlue(p);
-
-            if (l > lmax)
-                lmax = l;
-            if (l < lmin)
-                lmin = l;
-        }
-    }
-
-    for (int x = 0; x < image->width(); x++) {
-        for (int y = 0; y < image->height(); y++) {
-            QRgb p = image->pixel(x, y);
-
-            int r = checkBound((qRed(p) - lmin) * 255 / (lmax - lmin));
-            int g = checkBound((qGreen(p) - lmin) * 255 / (lmax - lmin));
-            int b = checkBound((qBlue(p) - lmin) * 255 / (lmax - lmin));
-
-            image->setPixel(x, y, qRgb(r, g, b));
-        }
-    }
-
-    imageLabel->setPixmap(QPixmap::fromImage(*image));
-    imageLabel->adjustSize();
-}
-
-void ImageEditor::channelLinearCorrection()
-{
-    int rmax, bmax, gmax;
-    int rmin, bmin, gmin;
-    int r, g, b;
-
-    rmax = bmax = gmax = 0;
-    rmin = bmin = gmin = INT_MAX;
-
-    for (int x = 0; x < image->width(); x++) {
-        for (int y = 0; y < image->height(); y++) {
-            QRgb p = image->pixel(x, y);
-
-            r = qRed(p);
-            g = qGreen(p);
-            b = qBlue(p);
-
-            if (r > rmax)
-                rmax = r;
-            if (r < rmin)
-                rmin = r;
-
-            if (g > gmax)
-                gmax = g;
-            if (g < gmin)
-                gmin = g;
-
-            if (b > bmax)
-                bmax = b;
-            if (b < bmin)
-                bmin = b;
-        }
-    }
-
-    for (int x = 0; x < image->width(); x++) {
-        for (int y = 0; y < image->height(); y++) {
-            QRgb p = image->pixel(x, y);
-
-            int r = checkBound((qRed(p) - rmin) * 255 / (rmax - rmin));
-            int g = checkBound((qGreen(p) - gmin) * 255 / (gmax - gmin));
-            int b = checkBound((qBlue(p) - bmin) * 255 / (bmax - bmin));
-
-            image->setPixel(x, y, qRgb(r, g, b));
-        }
-    }
-
-    imageLabel->setPixmap(QPixmap::fromImage(*image));
-    imageLabel->adjustSize();
 }

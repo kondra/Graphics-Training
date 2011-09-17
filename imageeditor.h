@@ -7,6 +7,8 @@
 #include <QMenu>
 #include <QAction>
 
+#include "logic.h"
+
 class ImageEditor : public QMainWindow
 {
     Q_OBJECT
@@ -17,6 +19,9 @@ public:
 private slots:
     void open();
     void save();
+    void channelCorr();
+    void linearCorr();
+    void gaussian();
 
 private:
     void createActions();
@@ -30,6 +35,7 @@ private:
     QAction *exitAct;
     QAction *linearCorrAct;
     QAction *channelCorrAct;
+    QAction *gaussianAct;
 
     QMenu *fileMenu;
     QMenu *viewMenu;

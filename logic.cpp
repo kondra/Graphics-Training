@@ -1,18 +1,39 @@
 #include <climits>
+#include <cmath>
 #include <iostream>
-
-#include "logic.h"
 
 using std::cout;
 
-void Logic::linearCorrection()
+#include "logic.h"
+#include "utils.h"
+
+
+int ImageLogic::checkWidth(int x)
+{
+    if (x < 0)
+        return 0;
+    if (x >= width())
+        return width() - 1;
+    return x;
+}
+
+int ImageLogic::checkHeight(int x)
+{
+    if (x < 0)
+        return 0;
+    if (x >= height())
+        return height() - 1;
+    return x;
+}
+
+void ImageLogic::linearCorrection()
 {
     int lmax = 0;
     int lmin = INT_MAX;
 
-    for (int x = 0; x < image->width(); x++) {
-        for (int y = 0; y < image->height(); y++) {
-            QRgb p = image->pixel(x, y);
+    for (int x = 0; x < width(); x++) {
+        for (int y = 0; y < height(); y++) {
+            QRgb p = pixel(x, y);
 
             int l = 0.2125d * qRed(p) + 0.7154d * qGreen(p) + 0.0721d * qBlue(p);
 
@@ -23,23 +44,20 @@ void Logic::linearCorrection()
         }
     }
 
-    for (int x = 0; x < image->width(); x++) {
-        for (int y = 0; y < image->height(); y++) {
-            QRgb p = image->pixel(x, y);
+    for (int x = 0; x < width(); x++) {
+        for (int y = 0; y < height(); y++) {
+            QRgb p = pixel(x, y);
 
             int r = checkBound((qRed(p) - lmin) * 255 / (lmax - lmin));
             int g = checkBound((qGreen(p) - lmin) * 255 / (lmax - lmin));
             int b = checkBound((qBlue(p) - lmin) * 255 / (lmax - lmin));
 
-            image->setPixel(x, y, qRgb(r, g, b));
+            setPixel(x, y, qRgb(r, g, b));
         }
     }
-
-    imageLabel->setPixmap(QPixmap::fromImage(*image));
-    imageLabel->adjustSize();
 }
 
-void ImageEditor::channelLinearCorrection()
+void ImageLogic::channelCorrection()
 {
     int rmax, bmax, gmax;
     int rmin, bmin, gmin;
@@ -48,9 +66,9 @@ void ImageEditor::channelLinearCorrection()
     rmax = bmax = gmax = 0;
     rmin = bmin = gmin = INT_MAX;
 
-    for (int x = 0; x < image->width(); x++) {
-        for (int y = 0; y < image->height(); y++) {
-            QRgb p = image->pixel(x, y);
+    for (int x = 0; x < width(); x++) {
+        for (int y = 0; y < height(); y++) {
+            QRgb p = pixel(x, y);
 
             r = qRed(p);
             g = qGreen(p);
@@ -73,18 +91,71 @@ void ImageEditor::channelLinearCorrection()
         }
     }
 
-    for (int x = 0; x < image->width(); x++) {
-        for (int y = 0; y < image->height(); y++) {
-            QRgb p = image->pixel(x, y);
+    for (int x = 0; x < width(); x++) {
+        for (int y = 0; y < height(); y++) {
+            QRgb p = pixel(x, y);
 
             int r = checkBound((qRed(p) - rmin) * 255 / (rmax - rmin));
             int g = checkBound((qGreen(p) - gmin) * 255 / (gmax - gmin));
             int b = checkBound((qBlue(p) - bmin) * 255 / (bmax - bmin));
 
-            image->setPixel(x, y, qRgb(r, g, b));
+            setPixel(x, y, qRgb(r, g, b));
+        }
+    }
+}
+
+void ImageLogic::gaussianFilter(int sigma)
+{
+    int size = 6 * sigma - 1;
+    int s2 = size / 2;
+
+    int x, y, i, j, k, l;
+
+    double norm = 0.0;
+
+    double **filter;
+    filter = new double*[size];
+    for (i = 0; i < size; i++) {
+        filter[i] = new double[size];
+    }
+
+    for (i = 0; i < size; i++) {
+        for (j = 0; j < size; j++) {
+            filter[i][j] = normalDistrib(j - s2, i - s2, sigma);
+            norm += filter[i][j];
         }
     }
 
-    imageLabel->setPixmap(QPixmap::fromImage(*image));
-    imageLabel->adjustSize();
+    for (i = 0; i < size; i++) {
+        for (j = 0; j < size; j++) {
+            filter[i][j] /= norm;
+        }
+    }
+
+    cout << normalDistrib(0, -1, 1) << "\n";
+    cout << normalDistrib(0, 0, 1) << "\n";
+
+    for (i = 0; i < size / 2; i++) {
+        for (j = 0; j < size; j++) {
+            qSwap(filter[i][j], filter[i][size - j - 2]);
+        }
+    }
+
+    double rsum, gsum, bsum;
+    for (x = 0; x < width(); x++) {
+        for (y = 0; y < height(); y++) {
+            rsum = gsum = bsum = 0.0;
+            for (k = 0; k < size; k++) {
+                for (l = 0; l < size; l++) {
+                    int n = checkWidth(x - k);
+                    int m = checkHeight(y - l);
+                    QRgb p = pixel(n,m);
+                    rsum += filter[l][k] * qRed(p);
+                    gsum += filter[l][k] * qGreen(p);
+                    bsum += filter[l][k] * qBlue(p);
+                }
+            }
+            setPixel(x, y, qRgb(checkBound(rsum), checkBound(gsum), checkBound(bsum)));
+        }
+    }
 }
