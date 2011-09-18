@@ -3,7 +3,8 @@
 #include "imageeditor.h"
 #include "logic.h"
 
-#include <QDebug>
+#include <iostream>
+using std::cout;
 
 ImageEditor::ImageEditor()
 {
@@ -23,9 +24,11 @@ ImageEditor::ImageEditor()
     setWindowTitle(tr("Image Editor"));
     resize(800, 600);
 
-    image = static_cast<ImageLogic*>(new QImage(tr("test/Lenna.png")));
-    imageLabel->setPixmap(QPixmap::fromImage(*image));
-    imageLabel->adjustSize();
+    image = 0;
+
+//    image = static_cast<ImageLogic*>(new QImage(tr("test/Lenna.png")));
+//    imageLabel->setPixmap(QPixmap::fromImage(*image));
+//    imageLabel->adjustSize();
 }
 
 void ImageEditor::open()
@@ -67,26 +70,35 @@ void ImageEditor::createActions()
     saveAct->setShortcut(tr("Ctrl+S"));
     connect(saveAct, SIGNAL(triggered()), this, SLOT(save()));
 
-    linearCorrAct = new QAction(tr("Autocontrast"), this);
-    connect(linearCorrAct, SIGNAL(triggered()), this, SLOT(linearCorr()));
+    autocontrastAct = new QAction(tr("Autocontrast"), this);
+    autocontrastAct->setShortcut(tr("Ctrl+A"));
+    connect(autocontrastAct, SIGNAL(triggered()), this, SLOT(autocontrast()));
 
-    channelCorrAct = new QAction(tr("Per Channel Autocontrast"), this);
-    connect(channelCorrAct, SIGNAL(triggered()), this, SLOT(channelCorr()));
+    autolevelsAct = new QAction(tr("Autolevels"), this);
+    autolevelsAct->setShortcut(tr("Ctrl+L"));
+    connect(autolevelsAct, SIGNAL(triggered()), this, SLOT(autolevels()));
 
-    gaussianAct = new QAction(tr("Gaussian Filter"), this);
+    gaussianAct = new QAction(tr("Gaussian Blur"), this);
+    gaussianAct->setShortcut(tr("Ctrl+G"));
     connect(gaussianAct, SIGNAL(triggered()), this, SLOT(gaussian()));
 }
 
-void ImageEditor::channelCorr()
+void ImageEditor::autolevels()
 {
+    if (!image)
+        return;
+
     image->channelCorrection();
 
     imageLabel->setPixmap(QPixmap::fromImage(*image));
     imageLabel->adjustSize();
 }
 
-void ImageEditor::linearCorr()
+void ImageEditor::autocontrast()
 {
+    if (!image)
+        return;
+
     image->linearCorrection();
 
     imageLabel->setPixmap(QPixmap::fromImage(*image));
@@ -95,7 +107,11 @@ void ImageEditor::linearCorr()
 
 void ImageEditor::gaussian()
 {
-    image->gaussianFilter(1);
+    if (!image)
+        return;
+
+    double sigma = QInputDialog::getDouble(this, tr("Set filer parameter"), tr("Sigma:"));
+    image->gaussianFilter(sigma);
 
     imageLabel->setPixmap(QPixmap::fromImage(*image));
     imageLabel->adjustSize();
@@ -112,8 +128,8 @@ void ImageEditor::createMenus()
     viewMenu = new QMenu(tr("&View"), this);
 
     editMenu = new QMenu(tr("&Edit"), this);
-    editMenu->addAction(linearCorrAct);
-    editMenu->addAction(channelCorrAct);
+    editMenu->addAction(autocontrastAct);
+    editMenu->addAction(autolevelsAct);
     editMenu->addAction(gaussianAct);
 
     menuBar()->addMenu(fileMenu);

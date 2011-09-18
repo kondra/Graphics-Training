@@ -5,12 +5,11 @@
 
 class ImageLogic : public QImage {
 private:
-    int checkHeight(int x);
-    int checkWidth(int x);
+    int check(int x, int b);
 public:
     void linearCorrection();
     void channelCorrection();
-    void gaussianFilter(int sigma);
+    void gaussianFilter(double sigma);
 
 };
 

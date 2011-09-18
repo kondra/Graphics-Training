@@ -14,7 +14,7 @@ int checkBound(int i)
     return i;
 }
 
-double normalDistrib(int x, int y, int sigma)
+double normalDistrib(int x, int y, double sigma)
 {
     return (1 / (2 * M_PI * sigma * sigma)) * exp(-double(x * x + y * y) / double(2 * sigma * sigma));
 }

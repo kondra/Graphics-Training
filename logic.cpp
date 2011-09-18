@@ -7,22 +7,12 @@ using std::cout;
 #include "logic.h"
 #include "utils.h"
 
-
-int ImageLogic::checkWidth(int x)
+int ImageLogic::check(int x, int b)
 {
     if (x < 0)
         return 0;
-    if (x >= width())
-        return width() - 1;
-    return x;
-}
-
-int ImageLogic::checkHeight(int x)
-{
-    if (x < 0)
-        return 0;
-    if (x >= height())
-        return height() - 1;
+    if (x >= b)
+        return b - 1;
     return x;
 }
 
@@ -30,17 +20,16 @@ void ImageLogic::linearCorrection()
 {
     int lmax = 0;
     int lmin = INT_MAX;
+    int l;
 
     for (int x = 0; x < width(); x++) {
         for (int y = 0; y < height(); y++) {
             QRgb p = pixel(x, y);
 
-            int l = 0.2125d * qRed(p) + 0.7154d * qGreen(p) + 0.0721d * qBlue(p);
+            l = 0.2125d * qRed(p) + 0.7154d * qGreen(p) + 0.0721d * qBlue(p);
 
-            if (l > lmax)
-                lmax = l;
-            if (l < lmin)
-                lmin = l;
+            if (l > lmax) lmax = l;
+            if (l < lmin) lmin = l;
         }
     }
 
@@ -51,6 +40,12 @@ void ImageLogic::linearCorrection()
             int r = checkBound((qRed(p) - lmin) * 255 / (lmax - lmin));
             int g = checkBound((qGreen(p) - lmin) * 255 / (lmax - lmin));
             int b = checkBound((qBlue(p) - lmin) * 255 / (lmax - lmin));
+
+            l = 0.2125d * qRed(p) + 0.7154d * qGreen(p) + 0.0721d * qBlue(p);
+            if (l < lmin + 1)
+                r = g = b = 0;
+            if (l > lmax - 1)
+                r = g = b = 255;
 
             setPixel(x, y, qRgb(r, g, b));
         }
@@ -74,20 +69,14 @@ void ImageLogic::channelCorrection()
             g = qGreen(p);
             b = qBlue(p);
 
-            if (r > rmax)
-                rmax = r;
-            if (r < rmin)
-                rmin = r;
+            if (r > rmax) rmax = r;
+            if (r < rmin) rmin = r;
 
-            if (g > gmax)
-                gmax = g;
-            if (g < gmin)
-                gmin = g;
+            if (g > gmax) gmax = g;
+            if (g < gmin) gmin = g;
 
-            if (b > bmax)
-                bmax = b;
-            if (b < bmin)
-                bmin = b;
+            if (b > bmax) bmax = b;
+            if (b < bmin) bmin = b;
         }
     }
 
@@ -104,10 +93,15 @@ void ImageLogic::channelCorrection()
     }
 }
 
-void ImageLogic::gaussianFilter(int sigma)
+void ImageLogic::gaussianFilter(double sigma)
 {
-    int size = 6 * sigma - 1;
+    int size = 6.0 * sigma;
+    if (!size % 2)
+        size--;
     int s2 = size / 2;
+
+    if (size == 0)
+        return;
 
     int x, y, i, j, k, l;
 
@@ -132,24 +126,25 @@ void ImageLogic::gaussianFilter(int sigma)
         }
     }
 
-    cout << normalDistrib(0, -1, 1) << "\n";
-    cout << normalDistrib(0, 0, 1) << "\n";
-
     for (i = 0; i < size / 2; i++) {
         for (j = 0; j < size; j++) {
-            qSwap(filter[i][j], filter[i][size - j - 2]);
+            qSwap(filter[i][j], filter[i][size - i - 2]);
         }
     }
 
+    int n, m;
     double rsum, gsum, bsum;
-    for (x = 0; x < width(); x++) {
-        for (y = 0; y < height(); y++) {
+    QRgb p;
+
+    QImage prev = *static_cast<QImage*>(this);
+    for (x = 0; x < prev.width(); x++) {
+        for (y = 0; y < prev.height(); y++) {
             rsum = gsum = bsum = 0.0;
             for (k = 0; k < size; k++) {
                 for (l = 0; l < size; l++) {
-                    int n = checkWidth(x - k);
-                    int m = checkHeight(y - l);
-                    QRgb p = pixel(n,m);
+                    n = check(x - (l - size / 2), prev.width());
+                    m = check(y - (k - size / 2), prev.height());
+                    p = prev.pixel(n,m);
                     rsum += filter[l][k] * qRed(p);
                     gsum += filter[l][k] * qGreen(p);
                     bsum += filter[l][k] * qBlue(p);
@@ -158,4 +153,9 @@ void ImageLogic::gaussianFilter(int sigma)
             setPixel(x, y, qRgb(checkBound(rsum), checkBound(gsum), checkBound(bsum)));
         }
     }
+
+    for (i = 0; i < size; i++) {
+        delete [] filter[i];
+    }
+    delete [] filter;
 }

@@ -19,8 +19,8 @@ public:
 private slots:
     void open();
     void save();
-    void channelCorr();
-    void linearCorr();
+    void autolevels();
+    void autocontrast();
     void gaussian();
 
 private:
@@ -33,8 +33,8 @@ private:
     QAction *openAct;
     QAction *saveAct;
     QAction *exitAct;
-    QAction *linearCorrAct;
-    QAction *channelCorrAct;
+    QAction *autolevelsAct;
+    QAction *autocontrastAct;
     QAction *gaussianAct;
 
     QMenu *fileMenu;
