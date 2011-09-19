@@ -2,12 +2,8 @@
 #include <cmath>
 
 #include <iostream>
-#include <algorithm>
-#include <vector>
 
 using std::cout;
-using std::sort;
-using std::vector;
 
 #include "logic.h"
 #include "utils.h"
@@ -125,15 +121,6 @@ Kernel Kernel::id(int size)
     }
     tmp.kernel[size / 2][size / 2] = 1;
     return tmp;
-}
-
-inline int ImageLogic::check(int x, int b)
-{
-    if (x < 0)
-        return 0;
-    if (x >= b)
-        return b - 1;
-    return x;
 }
 
 void ImageLogic::linearCorrection()
@@ -342,29 +329,21 @@ void ImageLogic::wavesEffect()
     }
 }
 
-struct _pixel {
-    int x, y;
-    int value;
-};
-
-bool operator<(const _pixel& a, const _pixel& b) {
-    return a.value < b.value;
-}
-
-/*
 void ImageLogic::medianFilter(int radius)
 {
-
     int diam = radius * 2 - 1;
     int size = diam * diam;
     int s2 = size / 2;
     int d2 = diam / 2;
-    vector<_pixel> pixels(size);
-    double light;
+    int rm, gm, bm;
+    int *red, *green, *blue;
     int n, m, x, y, k, l, i;
     QRgb p;
 
     QImage original = *static_cast<QImage*>(this);
+    red = new int[size];
+    green = new int[size];
+    blue = new int[size];
 
     for (x = 0; x < original.width(); x++) {
         for (y = 0; y < original.height(); y++) {
@@ -374,54 +353,54 @@ void ImageLogic::medianFilter(int radius)
                     n = check(x - (l - d2), original.width());
                     m = check(y - (k - d2), original.height());
                     p = original.pixel(n, m);
-                    light = 0.2125d * qRed(p) + 0.7154d * qGreen(p) + 0.0721d * qBlue(p);
-                    pixels[i].x = n;
-                    pixels[i].y = m;
-                    pixels[i].light = light;
+                    red[i] = qRed(p);
+                    green[i] = qGreen(p);
+                    blue[i] = qBlue(p);
                     i++;
                 }
             }
-            sort(pixels.begin(), pixels.begin() + i);
-            setPixel(x, y, original.pixel(pixels[s2].x, pixels[s2].y));
+            rm = search(red, s2, 0, i - 1);
+            gm = search(green, s2, 0, i - 1);
+            bm = search(blue, s2, 0, i - 1);
+            setPixel(x, y, qRgb(rm, gm, bm));
         }
     }
-}
-*/
 
-void ImageLogic::medianFilter(int radius)
+    delete [] red;
+    delete [] green;
+    delete [] blue;
+}
+
+void ImageLogic::greyWorld()
 {
-    int diam = radius * 2 - 1;
-    int size = diam * diam;
-    int s2 = size / 2;
-    int d2 = diam / 2;
-    vector<_pixel> red(size);
-    vector<_pixel> green(size);
-    vector<_pixel> blue(size);
-    int n, m, x, y, k, l, i;
+    double redAvg, greenAvg, blueAvg, avg;
+    double n = width() * height();
+    int x, y;
+    int r, g, b;
     QRgb p;
 
-    QImage original = *static_cast<QImage*>(this);
+    avg = redAvg = greenAvg = blueAvg = 0.0;
+    for (x = 0; x < width(); x++) {
+        for (y = 0; y < height(); y++) {
+            p = pixel(x, y);
+            redAvg += qRed(p);
+            greenAvg += qGreen(p);
+            blueAvg += qBlue(p);
+        }
+    }
 
-    for (x = 0; x < original.width(); x++) {
-        for (y = 0; y < original.height(); y++) {
-            i = 0;
-            for (k = 0; k < diam; k++) {
-                for (l = 0; l < diam; l++) {
-                    n = check(x - (l - d2), original.width());
-                    m = check(y - (k - d2), original.height());
-                    p = original.pixel(n, m);
-                    red[i].x = green[i].x = blue[i].x = n;
-                    red[i].y = green[i].y = blue[i].y = m;
-                    red[i].value = qRed(p);
-                    green[i].value = qGreen(p);
-                    blue[i].value = qBlue(p);
-                    i++;
-                }
-            }
-            sort(red.begin(), red.begin() + i);
-            sort(green.begin(), green.begin() + i);
-            sort(blue.begin(), blue.begin() + i);
-            setPixel(x, y, qRgb(red[s2].value, green[s2].value, blue[s2].value));
+    redAvg /= n;
+    greenAvg /= n;
+    blueAvg /= n;
+    avg = (redAvg + greenAvg + blueAvg) / 3.;
+
+    for (x = 0; x < width(); x++) {
+        for (y = 0; y < height(); y++) {
+            p = pixel(x, y);
+            r = checkBound(qRed(p) * avg / redAvg);
+            g = checkBound(qGreen(p) * avg / greenAvg);
+            b = checkBound(qBlue(p) * avg / blueAvg);
+            setPixel(x, y, qRgb(r, g, b));
         }
     }
 }

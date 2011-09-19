@@ -22,6 +22,12 @@ private slots:
     void autolevels();
     void autocontrast();
     void gaussian();
+    void fastGaussian();
+    void sharp();
+    void glass();
+    void waves();
+    void median();
+    void greyWorld();
 
 private:
     void createActions();
@@ -36,6 +42,12 @@ private:
     QAction *autolevelsAct;
     QAction *autocontrastAct;
     QAction *gaussianAct;
+    QAction *fastGaussianAct;
+    QAction *sharpAct;
+    QAction *glassAct;
+    QAction *wavesAct;
+    QAction *medianAct;
+    QAction *greyWorldAct;
 
     QMenu *fileMenu;
     QMenu *viewMenu;
