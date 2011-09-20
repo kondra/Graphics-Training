@@ -28,6 +28,7 @@ private slots:
     void waves();
     void median();
     void greyWorld();
+    void userFilter();
 
 private:
     void createActions();
@@ -48,10 +49,13 @@ private:
     QAction *wavesAct;
     QAction *medianAct;
     QAction *greyWorldAct;
+    QAction *userFilterAct;
 
     QMenu *fileMenu;
     QMenu *viewMenu;
-    QMenu *editMenu;
+    QMenu *filtersMenu;
+    QMenu *toolsMenu;
+    QMenu *effectsMenu;
 
     ImageLogic *image;
 };

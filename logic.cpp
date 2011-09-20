@@ -104,6 +104,8 @@ void Kernel::normalize()
             sum += kernel[i][j];
         }
     }
+    if (sum < 0.0000001)
+        return;
     for (i = 0; i < height; i++) {
         for (j = 0; j < width; j++) {
             kernel[i][j] /= sum;
@@ -228,10 +230,8 @@ void ImageLogic::convolution(Kernel& ker)
     }
 }
 
-void ImageLogic::unsharpMask()
+void ImageLogic::unsharpMask(double alpha)
 {
-    double alpha = 1.0;
-
     Kernel ker = gaussKernel(0.5);
     Kernel id = Kernel::id(3);
     ker = (-1.) * ker;
@@ -331,7 +331,7 @@ void ImageLogic::wavesEffect()
 
 void ImageLogic::medianFilter(int radius)
 {
-    int diam = radius * 2 - 1;
+    int diam = radius * 2;
     int size = diam * diam;
     int s2 = size / 2;
     int d2 = diam / 2;
@@ -403,4 +403,9 @@ void ImageLogic::greyWorld()
             setPixel(x, y, qRgb(r, g, b));
         }
     }
+}
+
+void ImageLogic::userFilter(Kernel& ker)
+{
+    convolution(ker);
 }

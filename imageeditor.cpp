@@ -110,10 +110,14 @@ void ImageEditor::sharp()
     if (!image)
         return;
 
-    image->unsharpMask();
+    bool ok = false;
+    double alpha = QInputDialog::getDouble(this, tr("Adjust parameters:"), tr("Alpha:"), 1.5, 0.0, 100.0, 1, &ok);
+    if (ok) {
+        image->unsharpMask(alpha);
 
-    imageLabel->setPixmap(QPixmap::fromImage(*image));
-    imageLabel->adjustSize();
+        imageLabel->setPixmap(QPixmap::fromImage(*image));
+        imageLabel->adjustSize();
+    }
 }
 
 void ImageEditor::glass()
@@ -159,6 +163,73 @@ void ImageEditor::greyWorld()
         return;
 
     image->greyWorld();
+
+    imageLabel->setPixmap(QPixmap::fromImage(*image));
+    imageLabel->adjustSize();
+}
+
+void ImageEditor::userFilter()
+{
+    if (!image)
+        return;
+
+    bool ok;
+    int size = QInputDialog::getInt(this, tr("Filter size:"), tr("size:"), 1, 1, 10, 1, &ok);
+
+    if (!ok)
+        return;
+
+    QDialog *dialog = new QDialog(this);
+    QVBoxLayout *mainLayout = new QVBoxLayout;
+    QGridLayout *gridLayout = new QGridLayout;
+    QDoubleSpinBox ***widgetsMatrix;
+    double **filter;
+    int i, j;
+
+    filter = new double*[size];
+    widgetsMatrix = new QDoubleSpinBox**[size];
+    for (i = 0; i < size; i++) {
+        widgetsMatrix[i] = new QDoubleSpinBox*[size];
+        filter[i] = new double[size];
+    }
+
+    for (i = 0; i < size; i++) {
+        for (j = 0; j < size; j++) {
+            widgetsMatrix[i][j] = new QDoubleSpinBox;
+            gridLayout->addWidget(widgetsMatrix[i][j], i, j);
+        }
+    }
+
+    QCheckBox *normalizeCheckBox = new QCheckBox(tr("Normalize"));
+
+    QDialogButtonBox *buttonBox = new QDialogButtonBox(dialog);
+    buttonBox->addButton(QDialogButtonBox::Ok);
+    buttonBox->addButton(QDialogButtonBox::Cancel);
+
+    mainLayout->addLayout(gridLayout);
+    mainLayout->addWidget(normalizeCheckBox);
+    mainLayout->addWidget(buttonBox);
+    dialog->setLayout(mainLayout);
+
+    connect(buttonBox, SIGNAL(accepted()), dialog, SLOT(accept()));
+    connect(buttonBox, SIGNAL(rejected()), dialog, SLOT(reject()));
+
+    int code = dialog->exec();
+    if (code == QDialog::Rejected)
+        return;
+
+    Kernel ker(size, size);
+    for (i = 0; i < size; i++) {
+        for (j = 0; j < size; j++) {
+            ker.kernel[i][j] = widgetsMatrix[i][j]->value();
+        }
+    }
+
+    if (normalizeCheckBox->checkState() == Qt::Checked) {
+        ker.normalize();
+    }
+
+    image->userFilter(ker);
 
     imageLabel->setPixmap(QPixmap::fromImage(*image));
     imageLabel->adjustSize();
@@ -210,6 +281,9 @@ void ImageEditor::createActions()
 
     greyWorldAct = new QAction(tr("Grey World"), this);
     connect(greyWorldAct, SIGNAL(triggered()), this, SLOT(greyWorld()));
+
+    userFilterAct = new QAction(tr("User Defined Filter"), this);
+    connect(userFilterAct, SIGNAL(triggered()), this, SLOT(userFilter()));
 }
 
 void ImageEditor::createMenus()
@@ -222,18 +296,25 @@ void ImageEditor::createMenus()
 
     viewMenu = new QMenu(tr("&View"), this);
 
-    editMenu = new QMenu(tr("&Edit"), this);
-    editMenu->addAction(autocontrastAct);
-    editMenu->addAction(autolevelsAct);
-    editMenu->addAction(gaussianAct);
-    editMenu->addAction(fastGaussianAct);
-    editMenu->addAction(sharpAct);
-    editMenu->addAction(wavesAct);
-    editMenu->addAction(glassAct);
-    editMenu->addAction(medianAct);
-    editMenu->addAction(greyWorldAct);
+    filtersMenu = new QMenu(tr("F&ilters"), this);
+    filtersMenu->addAction(gaussianAct);
+    filtersMenu->addAction(fastGaussianAct);
+    filtersMenu->addAction(sharpAct);
+    filtersMenu->addAction(medianAct);
+    filtersMenu->addAction(userFilterAct);
+
+    toolsMenu = new QMenu(tr("&Tools"), this);
+    toolsMenu->addAction(autocontrastAct);
+    toolsMenu->addAction(autolevelsAct);
+    toolsMenu->addAction(greyWorldAct);
+
+    effectsMenu = new QMenu(tr("&Effects"), this);
+    effectsMenu->addAction(wavesAct);
+    effectsMenu->addAction(glassAct);
 
     menuBar()->addMenu(fileMenu);
     menuBar()->addMenu(viewMenu);
-    menuBar()->addMenu(editMenu);
+    menuBar()->addMenu(toolsMenu);
+    menuBar()->addMenu(filtersMenu);
+    menuBar()->addMenu(effectsMenu);
 }

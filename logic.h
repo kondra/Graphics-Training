@@ -34,11 +34,12 @@ public:
     void channelCorrection();
     void gaussianBlur(double sigma);
     void fastGaussianBlur(double sigma);
-    void unsharpMask();
+    void unsharpMask(double alpha);
     void glassEffect();
     void wavesEffect();
     void medianFilter(int radius);
     void greyWorld();
+    void userFilter(Kernel& ker);
 
 };
 
