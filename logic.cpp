@@ -2,7 +2,6 @@
 #include <cmath>
 
 #include <iostream>
-
 using std::cout;
 
 #include "logic.h"
@@ -408,4 +407,128 @@ void ImageLogic::greyWorld()
 void ImageLogic::userFilter(Kernel& ker)
 {
     convolution(ker);
+}
+
+static bool check2(int x, int s)
+{
+    if (x >= s || x < 0)
+        return true;
+    return false;
+}
+
+void ImageLogic::scaling(double scale)
+{
+    int newWidth = width() * scale;
+    int newHeight = height() * scale;
+    int x, y;
+    double xOld, yOld;
+    int xCeil, yCeil, xFloor, yFloor;
+    double xDelta, yDelta;
+    double topRed, topGreen, topBlue, bottomRed, bottomGreen, bottomBlue;
+    double red, green, blue;
+    QRgb topLeft, topRight, bottomLeft, bottomRight;
+    QImage original = *static_cast<QImage*>(this);
+
+    for (x = 0; x < width(); x++) {
+        for (y = 0; y < width(); y++) {
+            setPixel(x, y, qRgb(255, 255, 255));
+        }
+    }
+
+    for (x = newWidth / 2 - width() / 2; x < newWidth / 2 + width() / 2; x++) {
+        for (y = newHeight / 2 - height() / 2; y < newHeight / 2 + height() / 2; y++) {
+            xOld = x / scale;
+            yOld = y / scale;
+
+            xCeil = ceil(xOld);
+            yCeil = ceil(yOld);
+            xFloor = floor(xOld);
+            yFloor = floor(yOld);
+
+            xDelta = xOld - double(xFloor);
+            yDelta = yOld - double(yFloor);
+
+            if (check2(xCeil, width()) || check2(xFloor, width()) || check2(yCeil, height()) || check2(yFloor, height())) 
+                continue;
+
+            topLeft = original.pixel(xFloor, yFloor);
+            topRight = original.pixel(xCeil, yFloor);
+            bottomLeft = original.pixel(xFloor, yCeil);
+            bottomRight = original.pixel(xCeil, yCeil);
+
+            topRed = (1 - xDelta) * qRed(topLeft) + xDelta * qRed(topRight);
+            topGreen = (1 - xDelta) * qGreen(topLeft) + xDelta * qGreen(topRight);
+            topBlue = (1 - xDelta) * qBlue(topLeft) + xDelta * qBlue(topRight);
+
+            bottomRed = (1 - xDelta) * qRed(bottomLeft) + xDelta * qRed(bottomRight);
+            bottomGreen = (1 - xDelta) * qGreen(bottomLeft) + xDelta * qGreen(bottomRight);
+            bottomBlue = (1 - xDelta) * qBlue(bottomLeft) + xDelta * qBlue(bottomRight);
+
+            red = (1 - yDelta) * topRed + yDelta * bottomRed;
+            green = (1 - yDelta) * topGreen + yDelta * bottomGreen;
+            blue = (1 - yDelta) * topBlue + yDelta * bottomBlue;
+
+            setPixel(x - (newWidth / 2 - width() / 2), y - (newHeight / 2 - height() / 2), qRgb(checkBound(red), checkBound(green), checkBound(blue)));
+        }
+    }
+}
+
+void ImageLogic::rotation(double alpha)
+{
+    int x, y;
+    double x0, y0;
+    double xOld, yOld;
+    int xCeil, yCeil, xFloor, yFloor;
+    double xDelta, yDelta;
+    double topRed, topGreen, topBlue, bottomRed, bottomGreen, bottomBlue;
+    double red, green, blue;
+    QRgb topLeft, topRight, bottomLeft, bottomRight;
+    QImage original = *static_cast<QImage*>(this);
+
+    for (x = 0; x < width(); x++) {
+        for (y = 0; y < width(); y++) {
+            setPixel(x, y, qRgb(255, 255, 255));
+        }
+    }
+
+    x0 = width() / 2.;
+    y0 = height() / 2.;
+
+    alpha = -alpha;
+    for (x = 0; x < width(); x++) {
+        for (y = 0; y < height(); y++) {
+            xOld = (x - x0) * cos(alpha) - (y - y0) * sin(alpha) + x0;
+            yOld = (x - x0) * sin(alpha) + (y - y0) * cos(alpha) + y0;
+
+            xCeil = ceil(xOld);
+            yCeil = ceil(yOld);
+            xFloor = floor(xOld);
+            yFloor = floor(yOld);
+
+            xDelta = xOld - double(xFloor);
+            yDelta = yOld - double(yFloor);
+
+            if (check2(xCeil, width()) || check2(xFloor, width()) || check2(yCeil, height()) || check2(yFloor, height())) 
+                continue;
+
+            topLeft = original.pixel(xFloor, yFloor);
+            topRight = original.pixel(xCeil, yFloor);
+            bottomLeft = original.pixel(xFloor, yCeil);
+            bottomRight = original.pixel(xCeil, yCeil);
+
+            topRed = (1 - xDelta) * qRed(topLeft) + xDelta * qRed(topRight);
+            topGreen = (1 - xDelta) * qGreen(topLeft) + xDelta * qGreen(topRight);
+            topBlue = (1 - xDelta) * qBlue(topLeft) + xDelta * qBlue(topRight);
+
+            bottomRed = (1 - xDelta) * qRed(bottomLeft) + xDelta * qRed(bottomRight);
+            bottomGreen = (1 - xDelta) * qGreen(bottomLeft) + xDelta * qGreen(bottomRight);
+            bottomBlue = (1 - xDelta) * qBlue(bottomLeft) + xDelta * qBlue(bottomRight);
+
+            red = (1 - yDelta) * topRed + yDelta * bottomRed;
+            green = (1 - yDelta) * topGreen + yDelta * bottomGreen;
+            blue = (1 - yDelta) * topBlue + yDelta * bottomBlue;
+
+            setPixel(x, y, qRgb(checkBound(red), checkBound(green), checkBound(blue)));
+        }
+    }
 }

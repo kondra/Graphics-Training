@@ -29,6 +29,8 @@ private slots:
     void median();
     void greyWorld();
     void userFilter();
+    void scaling();
+    void rotation();
 
 private:
     void createActions();
@@ -50,6 +52,8 @@ private:
     QAction *medianAct;
     QAction *greyWorldAct;
     QAction *userFilterAct;
+    QAction *scalingAct;
+    QAction *rotationAct;
 
     QMenu *fileMenu;
     QMenu *viewMenu;

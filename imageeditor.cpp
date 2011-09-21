@@ -235,6 +235,36 @@ void ImageEditor::userFilter()
     imageLabel->adjustSize();
 }
 
+void ImageEditor::scaling()
+{
+    if (!image)
+        return;
+
+    bool ok = false;
+    double scale = QInputDialog::getDouble(this, tr("Adjust parameters:"), tr("Scale:"), 1.0, 0.0, 100.0, 1, &ok);
+    if (ok) {
+        image->scaling(scale);
+
+        imageLabel->setPixmap(QPixmap::fromImage(*image));
+        imageLabel->adjustSize();
+    }
+}
+
+void ImageEditor::rotation()
+{
+    if (!image)
+        return;
+
+    bool ok = false;
+    double alpha = QInputDialog::getDouble(this, tr("Adjust parameters:"), tr("Angle:"), 0.0, -1000, 1000, 1, &ok);
+    if (ok) {
+        image->rotation(alpha);
+
+        imageLabel->setPixmap(QPixmap::fromImage(*image));
+        imageLabel->adjustSize();
+    }
+}
+
 void ImageEditor::createActions()
 {
     openAct = new QAction(tr("&Open..."), this);
@@ -284,6 +314,12 @@ void ImageEditor::createActions()
 
     userFilterAct = new QAction(tr("User Defined Filter"), this);
     connect(userFilterAct, SIGNAL(triggered()), this, SLOT(userFilter()));
+
+    scalingAct = new QAction(tr("Scale Image"), this);
+    connect(scalingAct, SIGNAL(triggered()), this, SLOT(scaling()));
+
+    rotationAct = new QAction(tr("Rotate Image"), this);
+    connect(rotationAct, SIGNAL(triggered()), this, SLOT(rotation()));
 }
 
 void ImageEditor::createMenus()
@@ -295,6 +331,8 @@ void ImageEditor::createMenus()
     fileMenu->addAction(exitAct);
 
     viewMenu = new QMenu(tr("&View"), this);
+    viewMenu->addAction(scalingAct);
+    viewMenu->addAction(rotationAct);
 
     filtersMenu = new QMenu(tr("F&ilters"), this);
     filtersMenu->addAction(gaussianAct);

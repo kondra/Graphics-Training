@@ -40,6 +40,8 @@ public:
     void medianFilter(int radius);
     void greyWorld();
     void userFilter(Kernel& ker);
+    void scaling(double scale);
+    void rotation(double alpha);
 
 };
 
