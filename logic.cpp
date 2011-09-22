@@ -124,8 +124,9 @@ Kernel Kernel::id(int size)
     return tmp;
 }
 
-void ImageLogic::init()
+ImageLogic::ImageLogic(const QImage& image)
 {
+    *static_cast<QImage*>(this) = image;
     selection = false;
     x1 = y1 = 0;
     x2 = width();

@@ -32,7 +32,7 @@ private:
     int x1, y1, x2, y2;
 
 public:
-    void init();
+    ImageLogic(const QImage& image);
     void linearCorrection();
     void channelCorrection();
     void gaussianBlur(double sigma);
