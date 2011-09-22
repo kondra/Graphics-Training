@@ -409,9 +409,16 @@ void ImageLogic::userFilter(Kernel& ker)
     convolution(ker);
 }
 
-static bool check2(int x, int s)
+static bool check2rot(int x, int w)
 {
-    if (x >= s || x < 0)
+    if (x > w + 1 || x < -1)
+        return true;
+    return false;
+}
+
+static bool check2scale(int x, int w)
+{
+    if (x > w - 1 || x < 0)
         return true;
     return false;
 }
@@ -448,7 +455,7 @@ void ImageLogic::scaling(double scale)
             xDelta = xOld - double(xFloor);
             yDelta = yOld - double(yFloor);
 
-            if (check2(xCeil, width()) || check2(xFloor, width()) || check2(yCeil, height()) || check2(yFloor, height())) 
+            if (check2scale(xFloor, width()) || check2scale(xCeil, width()) || check2scale(yFloor, height()) || check2scale(yCeil, height()))
                 continue;
 
             topLeft = original.pixel(xFloor, yFloor);
@@ -508,13 +515,13 @@ void ImageLogic::rotation(double alpha)
             xDelta = xOld - double(xFloor);
             yDelta = yOld - double(yFloor);
 
-            if (check2(xCeil, width()) || check2(xFloor, width()) || check2(yCeil, height()) || check2(yFloor, height())) 
+            if (check2rot(xFloor, width()) || check2rot(xCeil, width()) || check2rot(yFloor, height()) || check2rot(yCeil, height()))
                 continue;
 
-            topLeft = original.pixel(xFloor, yFloor);
-            topRight = original.pixel(xCeil, yFloor);
-            bottomLeft = original.pixel(xFloor, yCeil);
-            bottomRight = original.pixel(xCeil, yCeil);
+            topLeft = original.pixel(check(xFloor, width()), check(yFloor, height()));
+            topRight = original.pixel(check(xCeil, width()), check(yFloor, height()));
+            bottomLeft = original.pixel(check(xFloor, width()), check(yCeil, height()));
+            bottomRight = original.pixel(check(xCeil, width()), check(yCeil, height()));
 
             topRed = (1 - xDelta) * qRed(topLeft) + xDelta * qRed(topRight);
             topGreen = (1 - xDelta) * qGreen(topLeft) + xDelta * qGreen(topRight);

@@ -1,5 +1,7 @@
 #include <QtGui>
 
+#include <cmath>
+
 #include "imageeditor.h"
 #include "logic.h"
 
@@ -256,9 +258,9 @@ void ImageEditor::rotation()
         return;
 
     bool ok = false;
-    double alpha = QInputDialog::getDouble(this, tr("Adjust parameters:"), tr("Angle:"), 0.0, -1000, 1000, 1, &ok);
+    int alpha = QInputDialog::getInt(this, tr("Adjust parameters:"), tr("Angle(in degrees from -180 to 180):"), 0, -180, 180, 1, &ok);
     if (ok) {
-        image->rotation(alpha);
+        image->rotation(alpha / 180.0 * M_PI);
 
         imageLabel->setPixmap(QPixmap::fromImage(*image));
         imageLabel->adjustSize();
