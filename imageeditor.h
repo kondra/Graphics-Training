@@ -32,12 +32,17 @@ private slots:
     void scaling();
     void rotation();
 
+protected:
+    bool eventFilter(QObject *someOb, QEvent *ev);
+
 private:
     void createActions();
     void createMenus();
+    void drawRectangle();
 
     QLabel *imageLabel;
     QScrollArea *scrollArea;
+    QPixmap pixmap;
 
     QAction *openAct;
     QAction *saveAct;
@@ -62,6 +67,10 @@ private:
     QMenu *effectsMenu;
 
     ImageLogic *image;
+
+    int x1, y1;
+    int x2, y2;
+    bool captured;
 };
 
 #endif // IMAGEEDITOR_H

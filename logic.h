@@ -26,10 +26,13 @@ struct Kernel {
 class ImageLogic : public QImage {
 private:
     Kernel gaussKernel(double sigma);
-
     void convolution(Kernel& ker);
 
+    bool selection;
+    int x1, y1, x2, y2;
+
 public:
+    void init();
     void linearCorrection();
     void channelCorrection();
     void gaussianBlur(double sigma);
@@ -42,6 +45,8 @@ public:
     void userFilter(Kernel& ker);
     void scaling(double scale);
     void rotation(double alpha);
+    void setSelection(int _x1, int _y1, int _x2, int _y2);
+    void resetSelection();
 
 };
 

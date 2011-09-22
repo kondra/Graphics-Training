@@ -11,9 +11,9 @@ int checkBound(int i)
     return i;
 }
 
-int check(int x, int b)
+int check(int x, int l, int b)
 {
-    if (x < 0)
+    if (x < l)
         return 0;
     if (x >= b)
         return b - 1;

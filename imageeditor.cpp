@@ -2,6 +2,8 @@
 
 #include <cmath>
 
+#include <QDebug>
+
 #include "imageeditor.h"
 #include "logic.h"
 
@@ -25,7 +27,10 @@ ImageEditor::ImageEditor()
 
     image = 0;
 
+    imageLabel->installEventFilter(this);
+
     image = static_cast<ImageLogic*>(new QImage(tr("test/Lenna.png")));
+    image->init();
     imageLabel->setPixmap(QPixmap::fromImage(*image));
     imageLabel->adjustSize();
 }
@@ -35,6 +40,7 @@ void ImageEditor::open()
     QString fileName = QFileDialog::getOpenFileName(this, tr("Open File"), QDir::currentPath());
     if (!fileName.isEmpty()) {
         image = static_cast<ImageLogic*>(new QImage(fileName));
+        image->init();
         if (image->isNull()) {
             QMessageBox::information(this, tr("Image Viewer"), tr("Cannot load %1.").arg(fileName));
             return;
@@ -265,6 +271,52 @@ void ImageEditor::rotation()
         imageLabel->setPixmap(QPixmap::fromImage(*image));
         imageLabel->adjustSize();
     }
+}
+
+bool ImageEditor::eventFilter(QObject *someOb, QEvent *ev)
+{
+    if(someOb == imageLabel) {
+        QMouseEvent *mEv = static_cast<QMouseEvent*>(ev);
+        if (ev->type() == QEvent::MouseButtonPress) {
+            imageLabel->setPixmap(QPixmap::fromImage(*image));
+            x1 = mEv->x();
+            y1 = mEv->y();
+            pixmap = imageLabel->pixmap()->copy();
+            return true;
+        }
+        if (ev->type() == QEvent::MouseButtonRelease) {
+            x2 = mEv->x();
+            y2 = mEv->y();
+            if (x2 == x1 && y2 == y1) {
+                image->resetSelection();
+                imageLabel->setPixmap(pixmap);
+                return true;
+            }
+            captured = true;
+            drawRectangle();
+            image->setSelection(x1, y1, x2, y2);
+            return true;
+        }
+        if (ev->type() == QEvent::MouseMove) {
+            x2 = mEv->x();
+            y2 = mEv->y();
+            drawRectangle();
+            return true;
+        }
+    }
+    return false;
+}
+
+void ImageEditor::drawRectangle()
+{
+    QPainter painter;
+    QPixmap pix = pixmap.copy();
+//    QPixmap *pix = const_cast<QPixmap*>(imageLabel->pixmap());
+    painter.begin(&pix);
+//    painter.begin(pix);
+    painter.drawRect(x1, y1, x2 - x1, y2 - y1);
+    painter.end();
+    imageLabel->setPixmap(pix);
 }
 
 void ImageEditor::createActions()
