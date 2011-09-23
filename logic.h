@@ -44,6 +44,7 @@ public:
     void greyWorld();
     void userFilter(Kernel& ker);
     void scaling(double scale);
+    void scalingSelection(double scale);
     void rotation(double alpha);
     void setSelection(int _x1, int _y1, int _x2, int _y2);
     void resetSelection();
