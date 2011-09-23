@@ -38,8 +38,8 @@ public:
     void gaussianBlur(double sigma);
     void fastGaussianBlur(double sigma);
     void unsharpMask(double alpha);
-    void glassEffect();
-    void wavesEffect();
+    void glassEffect(int radius);
+    void wavesEffect(double waveLength, double amplitude);
     void medianFilter(int radius);
     void greyWorld();
     void userFilter(Kernel& ker);
@@ -48,6 +48,7 @@ public:
     void rotation(double alpha);
     void setSelection(int _x1, int _y1, int _x2, int _y2);
     void resetSelection();
+    void rotationSelection(double alpha);
 
 };
 

@@ -135,10 +135,14 @@ void ImageEditor::glass()
     if (!image)
         return;
 
-    image->glassEffect();
+    bool ok = false;
+    int radius = QInputDialog::getInt(this, tr("Adjust parameters:"), tr("Radius:"), 10, 1, 50, 1, &ok);
+    if (ok) {
+        image->glassEffect(radius);
 
-    imageLabel->setPixmap(QPixmap::fromImage(*image));
-    imageLabel->adjustSize();
+        imageLabel->setPixmap(QPixmap::fromImage(*image));
+        imageLabel->adjustSize();
+    }
 }
 
 void ImageEditor::waves()
@@ -146,7 +150,40 @@ void ImageEditor::waves()
     if (!image)
         return;
 
-    image->wavesEffect();
+    QDialog *dialog = new QDialog(this);
+    QVBoxLayout *mainLayout = new QVBoxLayout;
+    QGridLayout *gridLayout = new QGridLayout;
+
+    QLabel *waveLengthLabel = new QLabel(tr("Wavelength:"));
+    QLabel *amplitudeLabel = new QLabel(tr("Amplitude:"));
+
+    QDoubleSpinBox *waveLengthBox = new QDoubleSpinBox;
+    QDoubleSpinBox *amplitudeBox = new QDoubleSpinBox;
+
+    QDialogButtonBox *buttonBox = new QDialogButtonBox(dialog);
+    buttonBox->addButton(QDialogButtonBox::Ok);
+    buttonBox->addButton(QDialogButtonBox::Cancel);
+
+    gridLayout->addWidget(waveLengthLabel, 0, 0);
+    gridLayout->addWidget(waveLengthBox, 0, 1);
+    gridLayout->addWidget(amplitudeLabel, 1, 0);
+    gridLayout->addWidget(amplitudeBox, 1, 1);
+
+    mainLayout->addLayout(gridLayout);
+    mainLayout->addWidget(buttonBox);
+    dialog->setLayout(mainLayout);
+
+    connect(buttonBox, SIGNAL(accepted()), dialog, SLOT(accept()));
+    connect(buttonBox, SIGNAL(rejected()), dialog, SLOT(reject()));
+
+    int code = dialog->exec();
+    if (code == QDialog::Rejected)
+        return;
+
+    double wl = waveLengthBox->value();
+    double amp = amplitudeBox->value();
+
+    image->wavesEffect(wl, amp);
 
     imageLabel->setPixmap(QPixmap::fromImage(*image));
     imageLabel->adjustSize();

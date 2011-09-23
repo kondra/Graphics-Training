@@ -220,13 +220,13 @@ void ImageLogic::convolution(Kernel& ker)
 
     QImage original = *static_cast<QImage*>(this);
 
-    for (x = x1; x < x2; x++) {     //original.width()
-        for (y = y1; y < y2; y++) { //original.height()
+    for (x = x1; x < x2; x++) {
+        for (y = y1; y < y2; y++) {
             rsum = gsum = bsum = 0.0;
             for (l = 0; l < ker.width; l++) {
                 for (k = 0; k < ker.height; k++) {
-                    n = check(x - (l - ker.width / 2), x1, x2);   //original.width()
-                    m = check(y - (k - ker.height / 2), y1, y2); //original.height()
+                    n = check(x - (l - ker.width / 2), x1, x2);
+                    m = check(y - (k - ker.height / 2), y1, y2);
                     p = original.pixel(n, m);
                     rsum += ker.kernel[k][l] * qRed(p);
                     gsum += ker.kernel[k][l] * qGreen(p);
@@ -305,23 +305,7 @@ void ImageLogic::fastGaussianBlur(double sigma)
     convolution(row);
 }
 
-void ImageLogic::glassEffect()
-{
-    int x, y, k, l;
-    QImage original = *static_cast<QImage*>(this);
-    QRgb p;
-
-    for (k = x1; k < x2; k++) {     //original.width()  
-        for (l = y1; l < y2; l++) { //original.height()
-            x = check(k + (double(rand()) / double(RAND_MAX) - 0.5) * 10, x1, x2);
-            y = check(l + (double(rand()) / double(RAND_MAX) - 0.5) * 10, y1, y2);
-            p = original.pixel(k, l);
-            setPixel(x, y, p);
-        }
-    }
-}
-
-void ImageLogic::wavesEffect()
+void ImageLogic::glassEffect(int radius)
 {
     int x, y, k, l;
     QImage original = *static_cast<QImage*>(this);
@@ -329,7 +313,23 @@ void ImageLogic::wavesEffect()
 
     for (k = x1; k < x2; k++) {
         for (l = y1; l < y2; l++) {
-            x = check(k + 20.0 * sin(2 * M_PI * l / 128.0), x1, x2);
+            x = check(k + (double(rand()) / double(RAND_MAX) - 0.5) * radius, x1, x2);
+            y = check(l + (double(rand()) / double(RAND_MAX) - 0.5) * radius, y1, y2);
+            p = original.pixel(k, l);
+            setPixel(x, y, p);
+        }
+    }
+}
+
+void ImageLogic::wavesEffect(double waveLength, double amplitude)
+{
+    int x, y, k, l;
+    QImage original = *static_cast<QImage*>(this);
+    QRgb p;
+
+    for (k = x1; k < x2; k++) {
+        for (l = y1; l < y2; l++) {
+            x = check(k + amplitude * sin(2 * M_PI * l / waveLength), x1, x2);
             y = l;
             p = original.pixel(k, l);
             setPixel(x, y, p);
@@ -617,12 +617,80 @@ void ImageLogic::rotation(double alpha)
     }
 }
 
+void ImageLogic::rotationSelection(double alpha)
+{
+    int x, y;
+    double x0, y0;
+    double xOld, yOld;
+    int xCeil, yCeil, xFloor, yFloor;
+    double xDelta, yDelta;
+    double topRed, topGreen, topBlue, bottomRed, bottomGreen, bottomBlue;
+    double red, green, blue;
+    QRgb topLeft, topRight, bottomLeft, bottomRight;
+    QImage original = *static_cast<QImage*>(this);
+
+    for (x = x1; x < x2; x++) {
+        for (y = y1; y < y2; y++) {
+            setPixel(x, y, qRgb(255, 255, 255));
+        }
+    }
+
+    x0 = width() / 2.;
+    y0 = height() / 2.;
+
+    alpha = -alpha;
+    for (x = x1; x < x2; x++) {
+        for (y = y1; y < y2; y++) {
+            xOld = (x - x0) * cos(alpha) - (y - y0) * sin(alpha) + x0;
+            yOld = (x - x0) * sin(alpha) + (y - y0) * cos(alpha) + y0;
+
+            xCeil = ceil(xOld);
+            yCeil = ceil(yOld);
+            xFloor = floor(xOld);
+            yFloor = floor(yOld);
+
+            xDelta = xOld - double(xFloor);
+            yDelta = yOld - double(yFloor);
+
+            if (check2rot(xFloor, width()) || check2rot(xCeil, width()) || check2rot(yFloor, height()) || check2rot(yCeil, height()))
+                continue;
+
+            topLeft = original.pixel(check(xFloor, 0, width()), check(yFloor, 0, height()));
+            topRight = original.pixel(check(xCeil, 0, width()), check(yFloor, 0, height()));
+            bottomLeft = original.pixel(check(xFloor, 0, width()), check(yCeil, 0, height()));
+            bottomRight = original.pixel(check(xCeil, 0, width()), check(yCeil, 0, height()));
+
+            topRed = (1 - xDelta) * qRed(topLeft) + xDelta * qRed(topRight);
+            topGreen = (1 - xDelta) * qGreen(topLeft) + xDelta * qGreen(topRight);
+            topBlue = (1 - xDelta) * qBlue(topLeft) + xDelta * qBlue(topRight);
+
+            bottomRed = (1 - xDelta) * qRed(bottomLeft) + xDelta * qRed(bottomRight);
+            bottomGreen = (1 - xDelta) * qGreen(bottomLeft) + xDelta * qGreen(bottomRight);
+            bottomBlue = (1 - xDelta) * qBlue(bottomLeft) + xDelta * qBlue(bottomRight);
+
+            red = (1 - yDelta) * topRed + yDelta * bottomRed;
+            green = (1 - yDelta) * topGreen + yDelta * bottomGreen;
+            blue = (1 - yDelta) * topBlue + yDelta * bottomBlue;
+
+            setPixel(x, y, qRgb(checkBound(red), checkBound(green), checkBound(blue)));
+        }
+    }
+}
+
 void ImageLogic::setSelection(int _x1, int _y1, int _x2, int _y2)
 {
     x1 = _x1;
     y1 = _y1;
     x2 = _x2;
     y2 = _y2;
+    if (x1 > x2)
+        qSwap(x1, x2);
+    if (y1 > y2)
+        qSwap(y1, y2);
+    if (y1 == y2 || x1 == x2) {
+        selection = false;
+        return;
+    }
     selection = true;
 }
 
