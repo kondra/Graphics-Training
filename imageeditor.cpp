@@ -154,6 +154,8 @@ void ImageEditor::waves()
     QDoubleSpinBox *waveLengthBox = new QDoubleSpinBox;
     QDoubleSpinBox *amplitudeBox = new QDoubleSpinBox;
 
+    waveLengthBox->setRange(0.01, 1000);
+
     QDialogButtonBox *buttonBox = new QDialogButtonBox(dialog);
     buttonBox->addButton(QDialogButtonBox::Ok);
     buttonBox->addButton(QDialogButtonBox::Cancel);
@@ -189,7 +191,7 @@ void ImageEditor::median()
         return;
 
     bool ok = false;
-    int radius = QInputDialog::getInt(this, tr("Adjust parameters:"), tr("Sigma:"), 1, 1, 30, 1, &ok);
+    int radius = QInputDialog::getInt(this, tr("Adjust parameters:"), tr("Radius:"), 1, 1, 30, 1, &ok);
     if (ok) {
         image->medianFilter(radius);
 
@@ -310,6 +312,8 @@ void ImageEditor::rotate()
 bool ImageEditor::eventFilter(QObject *someOb, QEvent *ev)
 {
     if(someOb == imageLabel) {
+        if (!image)
+            return true;
         QMouseEvent *mEv = static_cast<QMouseEvent*>(ev);
         if (ev->type() == QEvent::MouseButtonPress) {
             imageLabel->setPixmap(QPixmap::fromImage(*image));

@@ -27,8 +27,8 @@ double normalDistrib(int x, int y, double sigma)
 
 bool check2rot(int x, int b, int w)
 {
-    if (x > w + 1 || x < b - 1)
-//    if (x > w || x < b)
+//    if (x > w + 1 || x < b - 1)
+    if (x > w || x < b )
         return true;
     return false;
 }
@@ -38,26 +38,4 @@ bool check2scale(int x, int w)
     if (x > w - 1 || x < 0)
         return true;
     return false;
-}
-
-int search(int *a, int k, int l, int r)
-{
-    int s, m, i=l, j=r, tmp;
-    if (l == r) return a[r];
-    s = (l + r) / 2;
-    m = a[s];
-    while (i < j)
-    {
-        while (a[i] < m) i++;
-        while (a[j] > m) j--;
-        if (i < j)
-        {
-            tmp = a[i];
-            a[i] = a[j];
-            a[j] = tmp;
-            i++; j--;
-        }
-    }
-    if (k <= j) return search(a, k, l, j);
-    else return search(a, k, j+1, r);
 }

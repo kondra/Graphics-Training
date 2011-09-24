@@ -1,6 +1,9 @@
 #include <climits>
 #include <cmath>
 
+#include <iostream>
+using std::cout;
+
 #include "logic.h"
 #include "utils.h"
 
@@ -100,7 +103,7 @@ void Kernel::normalize()
             sum += kernel[i][j];
         }
     }
-    if (sum < 0.0000001)
+    if (sum < eps)
         return;
     for (i = 0; i < height; i++) {
         for (j = 0; j < width; j++) {
@@ -149,7 +152,7 @@ void ImageLogic::linearCorrection()
         }
     }
 
-    if (lmax - lmin < 0.00001)
+    if (lmax - lmin < eps)
         return;
 
     for (x = x1; x < x2; x++) {
@@ -161,9 +164,9 @@ void ImageLogic::linearCorrection()
             b = checkColor((qBlue(p) - lmin) * 255. / (lmax - lmin));
 
             l = 0.2125 * qRed(p) + 0.7154 * qGreen(p) + 0.0721 * qBlue(p);
-            if (fabs(l - lmin) < 0.00001)
+            if (fabs(l - lmin) < eps)
                 r = g = b = 0;
-            if (fabs(l - lmax) < 0.00001)
+            if (fabs(l - lmax) < eps)
                 r = g = b = 255;
 
             setPixel(x, y, qRgb(r, g, b));
@@ -334,7 +337,7 @@ void ImageLogic::wavesEffect(double waveLength, double amplitude)
 
     for (k = x1; k < x2; k++) {
         for (l = y1; l < y2; l++) {
-            x = check(k + amplitude * sin(2 * M_PI * l / waveLength), x1, x2);
+            x = check(k + amplitude * sin(2 * M_PI * double(l) / waveLength), x1, x2);
             y = l;
             p = original.pixel(k, l);
             setPixel(x, y, p);
@@ -342,21 +345,61 @@ void ImageLogic::wavesEffect(double waveLength, double amplitude)
     }
 }
 
+template<class T>
+T search(T *a, int k, int l, int r)
+{
+    int s, i = l, j = r;
+    T tmp, m;
+
+    if (l == r)
+        return a[r];
+
+    s = (l + r) / 2;
+    m = a[s];
+
+    while (i < j)
+    {
+        while (a[i] < m) i++;
+        while (a[j] > m) j--;
+        if (i < j)
+        {
+            tmp = a[i];
+            a[i] = a[j];
+            a[j] = tmp;
+            i++; j--;
+        }
+    }
+
+    if (k <= j)
+        return search(a, k, l, j);
+    else
+        return search(a, k, j + 1, r);
+}
+
+struct Pix
+{
+    int x, y;
+    double l;
+    bool operator<(Pix& b) {
+        return l < b.l; 
+    }
+    bool operator>(Pix& b) {
+        return l > b.l; 
+    }
+};
+
 void ImageLogic::medianFilter(int radius)
 {
     int diam = radius * 2;
     int size = diam * diam;
     int s2 = size / 2;
     int d2 = diam / 2;
-    int rm, gm, bm;
-    int *red, *green, *blue;
     int n, m, x, y, k, l, i;
+    Pix *arr, median;
     QRgb p;
 
     QImage original = *static_cast<QImage*>(this);
-    red = new int[size];
-    green = new int[size];
-    blue = new int[size];
+    arr = new Pix[size];
 
     for (x = x1; x < x2; x++) {
         for (y = y1; y < y2; y++) {
@@ -366,22 +409,18 @@ void ImageLogic::medianFilter(int radius)
                     n = check(x - (l - d2), x1, x2);
                     m = check(y - (k - d2), y1, y2);
                     p = original.pixel(n, m);
-                    red[i] = qRed(p);
-                    green[i] = qGreen(p);
-                    blue[i] = qBlue(p);
+                    arr[i].l = 0.2125 * qRed(p) + 0.7154 * qGreen(p) + 0.0721 * qBlue(p);
+                    arr[i].x = n;
+                    arr[i].y = m;
                     i++;
                 }
             }
-            rm = search(red, s2, 0, i - 1);
-            gm = search(green, s2, 0, i - 1);
-            bm = search(blue, s2, 0, i - 1);
-            setPixel(x, y, qRgb(rm, gm, bm));
+            median = search(arr, s2, 0, i - 1);
+            setPixel(x, y, original.pixel(median.x, median.y));
         }
     }
 
-    delete [] red;
-    delete [] green;
-    delete [] blue;
+    delete [] arr;
 }
 
 void ImageLogic::greyWorld()
@@ -570,6 +609,14 @@ void ImageLogic::setSelection(int _x1, int _y1, int _x2, int _y2)
         selection = false;
         return;
     }
+    if (x2 > width())
+        x2 = width();
+    if (y2 > height())
+        y2 = height();
+    if (x1 < 0)
+        x1 = 0;
+    if (y1 < 0)
+        y1 = 0;
     selection = true;
 }
 
