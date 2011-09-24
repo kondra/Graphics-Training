@@ -46,6 +46,8 @@ void ImageEditor::open()
 
 void ImageEditor::save()
 {
+    if (!image)
+        return;
     QString fileName = QFileDialog::getSaveFileName(this, tr("Save File"), QDir::currentPath());
     if (!fileName.isEmpty()) {
         if (!image->save(fileName)) {
