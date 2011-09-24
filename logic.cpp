@@ -140,7 +140,7 @@ void ImageLogic::linearCorrection()
         for (int y = y1; y < y2; y++) {
             QRgb p = pixel(x, y);
 
-            l = 0.2125d * qRed(p) + 0.7154d * qGreen(p) + 0.0721d * qBlue(p);
+            l = 0.2125 * qRed(p) + 0.7154 * qGreen(p) + 0.0721 * qBlue(p);
 
             if (l > lmax) lmax = l;
             if (l < lmin) lmin = l;
@@ -155,7 +155,7 @@ void ImageLogic::linearCorrection()
             int g = checkColor((qGreen(p) - lmin) * 255 / (lmax - lmin));
             int b = checkColor((qBlue(p) - lmin) * 255 / (lmax - lmin));
 
-            l = 0.2125d * qRed(p) + 0.7154d * qGreen(p) + 0.0721d * qBlue(p);
+            l = 0.2125 * qRed(p) + 0.7154 * qGreen(p) + 0.0721 * qBlue(p);
             if (l == lmin)
                 r = g = b = 0;
             if (l == lmax)

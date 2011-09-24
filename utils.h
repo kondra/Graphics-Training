@@ -1,6 +1,8 @@
 #ifndef UTILS_H
 #define UTILS_H
 
+#define M_PI 3.14159265358979323846
+
 int checkColor(int i);
 int check(int x, int l, int b);
 bool check2rot(int x, int b, int w);
