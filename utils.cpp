@@ -2,7 +2,7 @@
 
 #include "utils.h"
 
-int checkBound(int i)
+int checkColor(int i)
 {
     if (i < 0)
         return 0;
@@ -14,7 +14,7 @@ int checkBound(int i)
 int check(int x, int l, int b)
 {
     if (x < l)
-        return 0;
+        return l;
     if (x >= b)
         return b - 1;
     return x;
@@ -23,6 +23,20 @@ int check(int x, int l, int b)
 double normalDistrib(int x, int y, double sigma)
 {
     return (1 / (2 * M_PI * sigma * sigma)) * exp(-double(x * x + y * y) / double(2 * sigma * sigma));
+}
+
+bool check2rot(int x, int b, int w)
+{
+    if (x > w + 1 || x < b - 1)
+        return true;
+    return false;
+}
+
+bool check2scale(int x, int w)
+{
+    if (x > w - 1 || x < 0)
+        return true;
+    return false;
 }
 
 int search(int *a, int k, int l, int r)

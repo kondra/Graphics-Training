@@ -27,6 +27,8 @@ class ImageLogic : public QImage {
 private:
     Kernel gaussKernel(double sigma);
     void convolution(Kernel& ker);
+    QRgb bilinearInterpolation(const QImage& original, double xOld, double yOld, int xFloor, int xCeil, int yFloor, int yCeil);
+    void fillSelection();
 
     bool selection;
     int x1, y1, x2, y2;
