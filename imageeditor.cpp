@@ -28,20 +28,12 @@ ImageEditor::ImageEditor()
     image = 0;
 
     imageLabel->installEventFilter(this);
-
-//    image = static_cast<ImageLogic*>(new QImage(tr("test/Lenna.png")));
-    image = new ImageLogic(QImage(tr("test/Lenna.png")));
-//    image->init();
-    imageLabel->setPixmap(QPixmap::fromImage(*image));
-    imageLabel->adjustSize();
 }
 
 void ImageEditor::open()
 {
     QString fileName = QFileDialog::getOpenFileName(this, tr("Open File"), QDir::currentPath());
     if (!fileName.isEmpty()) {
- //       image = static_cast<ImageLogic*>(new QImage(fileName));
- //       image->init();
         image = new ImageLogic(QImage(fileName));
         if (image->isNull()) {
             QMessageBox::information(this, tr("Image Viewer"), tr("Cannot load %1.").arg(fileName));
