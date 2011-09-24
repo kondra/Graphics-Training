@@ -28,6 +28,7 @@ double normalDistrib(int x, int y, double sigma)
 bool check2rot(int x, int b, int w)
 {
     if (x > w + 1 || x < b - 1)
+//    if (x > w || x < b)
         return true;
     return false;
 }

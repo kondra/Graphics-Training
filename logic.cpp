@@ -132,12 +132,14 @@ ImageLogic::ImageLogic(const QImage& image)
 
 void ImageLogic::linearCorrection()
 {
-    int lmax = 0;
-    int lmin = INT_MAX;
-    int l;
+    double lmax = 0;
+    double lmin = INT_MAX;
+    double l;
+    int r, g, b;
+    int x, y;
 
-    for (int x = x1; x < x2; x++) {
-        for (int y = y1; y < y2; y++) {
+    for (x = x1; x < x2; x++) {
+        for (y = y1; y < y2; y++) {
             QRgb p = pixel(x, y);
 
             l = 0.2125 * qRed(p) + 0.7154 * qGreen(p) + 0.0721 * qBlue(p);
@@ -147,18 +149,21 @@ void ImageLogic::linearCorrection()
         }
     }
 
-    for (int x = x1; x < x2; x++) {
-        for (int y = y1; y < y2; y++) {
+    if (lmax - lmin < 0.00001)
+        return;
+
+    for (x = x1; x < x2; x++) {
+        for (y = y1; y < y2; y++) {
             QRgb p = pixel(x, y);
 
-            int r = checkColor((qRed(p) - lmin) * 255 / (lmax - lmin));
-            int g = checkColor((qGreen(p) - lmin) * 255 / (lmax - lmin));
-            int b = checkColor((qBlue(p) - lmin) * 255 / (lmax - lmin));
+            r = checkColor((qRed(p) - lmin) * 255. / (lmax - lmin));
+            g = checkColor((qGreen(p) - lmin) * 255. / (lmax - lmin));
+            b = checkColor((qBlue(p) - lmin) * 255. / (lmax - lmin));
 
             l = 0.2125 * qRed(p) + 0.7154 * qGreen(p) + 0.0721 * qBlue(p);
-            if (l == lmin)
+            if (fabs(l - lmin) < 0.00001)
                 r = g = b = 0;
-            if (l == lmax)
+            if (fabs(l - lmax) < 0.00001)
                 r = g = b = 255;
 
             setPixel(x, y, qRgb(r, g, b));
@@ -198,9 +203,12 @@ void ImageLogic::channelCorrection()
         for (int y = y1; y < y2; y++) {
             QRgb p = pixel(x, y);
 
-            int r = checkColor((qRed(p) - rmin) * 255 / (rmax - rmin));
-            int g = checkColor((qGreen(p) - gmin) * 255 / (gmax - gmin));
-            int b = checkColor((qBlue(p) - bmin) * 255 / (bmax - bmin));
+            if (rmax > rmin)
+                r = checkColor((qRed(p) - rmin) * 255 / (rmax - rmin));
+            if (gmax > gmin)
+                g = checkColor((qGreen(p) - gmin) * 255 / (gmax - gmin));
+            if (bmax > bmin)
+                b = checkColor((qBlue(p) - bmin) * 255 / (bmax - bmin));
 
             setPixel(x, y, qRgb(r, g, b));
         }

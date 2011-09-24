@@ -237,6 +237,7 @@ void ImageEditor::userFilter()
     for (i = 0; i < size; i++) {
         for (j = 0; j < size; j++) {
             widgetsMatrix[i][j] = new QDoubleSpinBox;
+            widgetsMatrix[i][j]->setRange(-100, 100);
             gridLayout->addWidget(widgetsMatrix[i][j], i, j);
         }
     }
