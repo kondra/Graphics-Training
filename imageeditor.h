@@ -30,7 +30,7 @@ private slots:
     void greyWorld();
     void userFilter();
     void scaling();
-    void rotation();
+    void rotate();
 
 protected:
     bool eventFilter(QObject *someOb, QEvent *ev);

@@ -297,7 +297,7 @@ void ImageEditor::scaling()
     }
 }
 
-void ImageEditor::rotation()
+void ImageEditor::rotate()
 {
     if (!image)
         return;
@@ -305,7 +305,7 @@ void ImageEditor::rotation()
     bool ok = false;
     int alpha = QInputDialog::getInt(this, tr("Adjust parameters:"), tr("Angle(in degrees from -180 to 180):"), 0, -180, 180, 1, &ok);
     if (ok) {
-        image->rotation(alpha / 180.0 * M_PI);
+        image->rotate(alpha / 180.0 * M_PI);
 
         imageLabel->setPixmap(QPixmap::fromImage(*image));
         imageLabel->adjustSize();
@@ -412,7 +412,7 @@ void ImageEditor::createActions()
     connect(scalingAct, SIGNAL(triggered()), this, SLOT(scaling()));
 
     rotationAct = new QAction(tr("Rotate Image"), this);
-    connect(rotationAct, SIGNAL(triggered()), this, SLOT(rotation()));
+    connect(rotationAct, SIGNAL(triggered()), this, SLOT(rotate()));
 }
 
 void ImageEditor::createMenus()

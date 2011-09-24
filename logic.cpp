@@ -418,9 +418,9 @@ void ImageLogic::userFilter(Kernel& ker)
     convolution(ker);
 }
 
-static bool check2rot(int x, int w)
+static bool check2rot(int x, int b, int w)
 {
-    if (x > w + 1 || x < -1)
+    if (x > w + 1 || x < b - 1)
         return true;
     return false;
 }
@@ -557,8 +557,10 @@ void ImageLogic::scaling(double scale)
     }
 }
 
-void ImageLogic::rotation(double alpha)
+void ImageLogic::rotate(double alpha)
 {
+    if (x1 != 0 || y1 != 0 || x2 != width() || y2 != height())
+        return rotateSelection(alpha);
     int x, y;
     double x0, y0;
     double xOld, yOld;
@@ -592,7 +594,7 @@ void ImageLogic::rotation(double alpha)
             xDelta = xOld - double(xFloor);
             yDelta = yOld - double(yFloor);
 
-            if (check2rot(xFloor, width()) || check2rot(xCeil, width()) || check2rot(yFloor, height()) || check2rot(yCeil, height()))
+            if (check2rot(xFloor, 0, width()) || check2rot(xCeil, 0, width()) || check2rot(yFloor, 0, height()) || check2rot(yCeil, 0, height()))
                 continue;
 
             topLeft = original.pixel(check(xFloor, 0, width()), check(yFloor, 0, height()));
@@ -617,9 +619,11 @@ void ImageLogic::rotation(double alpha)
     }
 }
 
-void ImageLogic::rotationSelection(double alpha)
+void ImageLogic::rotateSelection(double alpha)
 {
     int x, y;
+    int Width = x2 - x1;
+    int Height = y2 - y1;
     double x0, y0;
     double xOld, yOld;
     int xCeil, yCeil, xFloor, yFloor;
@@ -635,12 +639,12 @@ void ImageLogic::rotationSelection(double alpha)
         }
     }
 
-    x0 = width() / 2.;
-    y0 = height() / 2.;
+    x0 = x1 + Width / 2.;
+    y0 = y1 + Height / 2.;
 
     alpha = -alpha;
-    for (x = x1; x < x2; x++) {
-        for (y = y1; y < y2; y++) {
+    for (x = 0; x < width(); x++) {
+        for (y = 0; y < height(); y++) {
             xOld = (x - x0) * cos(alpha) - (y - y0) * sin(alpha) + x0;
             yOld = (x - x0) * sin(alpha) + (y - y0) * cos(alpha) + y0;
 
@@ -652,7 +656,7 @@ void ImageLogic::rotationSelection(double alpha)
             xDelta = xOld - double(xFloor);
             yDelta = yOld - double(yFloor);
 
-            if (check2rot(xFloor, width()) || check2rot(xCeil, width()) || check2rot(yFloor, height()) || check2rot(yCeil, height()))
+            if (check2rot(xFloor, x1, x2) || check2rot(xCeil, x1, x2) || check2rot(yFloor, y1, y2) || check2rot(yCeil, y1, y2))
                 continue;
 
             topLeft = original.pixel(check(xFloor, 0, width()), check(yFloor, 0, height()));
