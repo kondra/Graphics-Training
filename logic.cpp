@@ -133,11 +133,16 @@ ImageLogic::ImageLogic(const QImage& image)
     y2 = height();
 }
 
+void ImageLogic::getLuminosity(int r, int g, int b)
+{
+    return r * RED_INTENSE + g * GREEN_INTENSE + b * BLUE_INTENSE;
+}
+
 void ImageLogic::linearCorrection()
 {
     double lmax = 0;
     double lmin = INT_MAX;
-    double l;
+    double luminosity[256];
     int r, g, b;
     int x, y;
 
@@ -145,7 +150,7 @@ void ImageLogic::linearCorrection()
         for (y = y1; y < y2; y++) {
             QRgb p = pixel(x, y);
 
-            l = 0.2125 * qRed(p) + 0.7154 * qGreen(p) + 0.0721 * qBlue(p);
+            luminosity[round(getLuminosity(qRed(p), qGreen(p), qBlue(p)))]++;
 
             if (l > lmax) lmax = l;
             if (l < lmin) lmin = l;

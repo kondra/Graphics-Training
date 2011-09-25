@@ -3,6 +3,10 @@
 
 #include <QImage>
 
+const double RED_INTENSE = 0.2125;
+const double RED_INTENSE = 0.7154;
+const double RED_INTENSE = 0.0721;
+
 struct Kernel {
     double **kernel;
     int width;
