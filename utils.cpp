@@ -38,3 +38,33 @@ bool check2scale(int x, int w)
         return true;
     return false;
 }
+
+int search(int *a, int k, int l, int r)
+{
+    int s, i = l, j = r;
+    int tmp, m;
+
+    if (l == r)
+        return a[r];
+
+    s = (l + r) / 2;
+    m = a[s];
+
+    while (i < j)
+    {
+        while (a[i] < m) i++;
+        while (a[j] > m) j--;
+        if (i < j)
+        {
+            tmp = a[i];
+            a[i] = a[j];
+            a[j] = tmp;
+            i++; j--;
+        }
+    }
+
+    if (k <= j)
+        return search(a, k, l, j);
+    else
+        return search(a, k, j + 1, r);
+}

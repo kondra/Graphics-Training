@@ -345,61 +345,21 @@ void ImageLogic::wavesEffect(double waveLength, double amplitude)
     }
 }
 
-template<class T>
-T search(T *a, int k, int l, int r)
-{
-    int s, i = l, j = r;
-    T tmp, m;
-
-    if (l == r)
-        return a[r];
-
-    s = (l + r) / 2;
-    m = a[s];
-
-    while (i < j)
-    {
-        while (a[i] < m) i++;
-        while (a[j] > m) j--;
-        if (i < j)
-        {
-            tmp = a[i];
-            a[i] = a[j];
-            a[j] = tmp;
-            i++; j--;
-        }
-    }
-
-    if (k <= j)
-        return search(a, k, l, j);
-    else
-        return search(a, k, j + 1, r);
-}
-
-struct Pix
-{
-    int x, y;
-    double l;
-    bool operator<(Pix& b) {
-        return l < b.l; 
-    }
-    bool operator>(Pix& b) {
-        return l > b.l; 
-    }
-};
-
 void ImageLogic::medianFilter(int radius)
 {
     int diam = radius * 2;
     int size = diam * diam;
     int s2 = size / 2;
     int d2 = diam / 2;
+    int rm, gm, bm;
+    int *red, *green, *blue;
     int n, m, x, y, k, l, i;
-    Pix *arr, median;
     QRgb p;
 
     QImage original = *static_cast<QImage*>(this);
-    arr = new Pix[size];
+    red = new int[size];
+    green = new int[size];
+    blue = new int[size];
 
     for (x = x1; x < x2; x++) {
         for (y = y1; y < y2; y++) {
@@ -409,18 +369,22 @@ void ImageLogic::medianFilter(int radius)
                     n = check(x - (l - d2), x1, x2);
                     m = check(y - (k - d2), y1, y2);
                     p = original.pixel(n, m);
-                    arr[i].l = 0.2125 * qRed(p) + 0.7154 * qGreen(p) + 0.0721 * qBlue(p);
-                    arr[i].x = n;
-                    arr[i].y = m;
+                    red[i] = qRed(p);
+                    green[i] = qGreen(p);
+                    blue[i] = qBlue(p);
                     i++;
                 }
             }
-            median = search(arr, s2, 0, i - 1);
-            setPixel(x, y, original.pixel(median.x, median.y));
+            rm = search(red, s2, 0, i - 1);
+            gm = search(green, s2, 0, i - 1);
+            bm = search(blue, s2, 0, i - 1);
+            setPixel(x, y, qRgb(rm, gm, bm));
         }
     }
 
-    delete [] arr;
+    delete [] red;
+    delete [] green;
+    delete [] blue;
 }
 
 void ImageLogic::greyWorld()
