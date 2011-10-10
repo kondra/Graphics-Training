@@ -17,26 +17,27 @@ public:
     MainWindow();
 
 private slots:
-    void open();
     void learn();
+    void detect();
+    void classify();
+    void evaluate();
 
 private:
     void createActions();
     void createMenus();
-    void drawRectangle();
+    void drawRectangle(QRect rect);
 
     QLabel *imageLabel;
     QScrollArea *scrollArea;
-    QPixmap pixmap;
 
-    QAction *openAct;
     QAction *exitAct;
     QAction *learnAct;
+    QAction *detectAct;
+    QAction *classifyAct;
+    QAction *evaluateAct;
 
     QMenu *fileMenu;
     QMenu *processMenu;
-
-    QImage *image;
 };
 
 #endif
