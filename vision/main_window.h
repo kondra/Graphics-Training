@@ -14,30 +14,15 @@ class MainWindow : public QMainWindow
     Q_OBJECT
 
 public:
-    MainWindow();
-
-private slots:
-    void learn();
-    void detect();
-    void classify();
-    void evaluate();
-
-private:
-    void createActions();
-    void createMenus();
+    MainWindow(const QString& imageFileName);
     void drawRectangle(QRect rect);
 
+private:
     QLabel *imageLabel;
     QScrollArea *scrollArea;
 
     QAction *exitAct;
-    QAction *learnAct;
-    QAction *detectAct;
-    QAction *classifyAct;
-    QAction *evaluateAct;
 
-    QMenu *fileMenu;
-    QMenu *processMenu;
 };
 
 #endif

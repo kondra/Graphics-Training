@@ -13,8 +13,6 @@
 #include "logic.h"
 #include "liblinear-1.8/linear.h"
 
-#define Malloc(type, size) (type *)malloc(sizeof(type) * (size))
-
 double Logic::getBrightness(QRgb p)
 {
     return qRed(p) * RED_INTENSE +
@@ -26,6 +24,8 @@ int Logic::check(int x, int n)
 {
     if (x >= n)
         return n - 1;
+    if (x < 0)
+        return 0;
     return x;
 }
 
@@ -48,7 +48,12 @@ void Logic::addUnitHOG(const QImage& image, QVector<int>& hist, int x0, int y0, 
             gradX = getBrightness(image.pixel(check(i + 1, width), check(j, height))) - getBrightness(image.pixel(check(i, width), check(j, height)));
             gradY = getBrightness(image.pixel(check(i, width), check(j + 1, height))) - getBrightness(image.pixel(check(i, width), check(j, height)));
             angle = atan2(gradY, gradX) + PI;
-            h[(int)(angle * coef)]++;
+            if (angle > 2 * PI) {
+                angle -= EPS;
+            }
+            int k = (int)(angle * coef);
+            assert(k >= 0 && k < HOG_SIZE);
+            h[k]++;
         }
     }
 
@@ -98,6 +103,8 @@ void Logic::learn(const QString& descrFileName, const QString& dirName, const QS
         return;
     }
 
+    int t = clock();
+
     dir.setFilter(QDir::Files | QDir::Readable);
     QStringList list = dir.entryList();
 
@@ -117,7 +124,7 @@ void Logic::learn(const QString& descrFileName, const QString& dirName, const QS
     QString curName;
     bool ok;
     int num;
-    int i, j, j1, j2, x;
+    int i, j, j1, j2;
     int w;
 
     QVector<QVector<int> > trainFeatures;
@@ -157,7 +164,11 @@ void Logic::learn(const QString& descrFileName, const QString& dirName, const QS
             trainFeatures.push_back(getHOG(image, description[j].x0, description[j].x1));
             trainLabels.push_back(1);
         }
-        w = image.width() - PEDESTRIAN_WIDTH;
+        w = image.width();
+        /*
+         * too smart
+        int x;
+        w = image.width() - HUMAN_WIDTH;
         ok = false;
         while (!ok) {
             x = rand() % w;
@@ -169,27 +180,36 @@ void Logic::learn(const QString& descrFileName, const QString& dirName, const QS
                 }
             }
         }
-        trainFeatures.push_back(getHOG(image, x, x + PEDESTRIAN_WIDTH));
+        trainFeatures.push_back(getHOG(image, x, x + HUMAN_WIDTH));
         trainLabels.push_back(-1);
-        printf("Processing %d.png\n", num);
+        */
+        if (description[j1].x0 + 2 * HUMAN_WIDTH + 1 < w) {
+            trainFeatures.push_back(getHOG(image, description[j1].x0 + HUMAN_WIDTH + 1, description[j1].x0 + 2 * HUMAN_WIDTH + 1));
+        } else if (description[j1].x0 - HUMAN_WIDTH - 1 >= 0) {
+            trainFeatures.push_back(getHOG(image, description[j1].x0 - HUMAN_WIDTH - 1, description[j1].x0 - 1));
+        }
+        trainLabels.push_back(-1);
+        //printf("Processing %d.png\n", num);
+        printf("#");
+        fflush(stdout);
     }
+    printf("\n");
 
     struct problem prob;
     prob.l = (int)trainLabels.size();
     prob.bias = 0;
     prob.n = NUM_FEATURES + 1;
 
-    prob.y = Malloc(int, prob.l);
-    prob.x = Malloc(struct feature_node *, prob.l);
+    prob.y = new int [prob.l];
+    prob.x = new struct feature_node * [prob.l];
 
     for (i = 0; i < trainLabels.size(); i++) {
-        prob.x[i] = Malloc(struct feature_node, NUM_FEATURES + 1);
+        prob.x[i] = new struct feature_node [NUM_FEATURES + 1];
         prob.x[i][NUM_FEATURES].index = -1;
         for (j = 0; j < NUM_FEATURES; j++) {
             prob.x[i][j].index = 1 + j;
             prob.x[i][j].value = trainFeatures[i][j];
         }
-        printf("\n");
         prob.y[i] = trainLabels[i];
     }
 
@@ -207,44 +227,74 @@ void Logic::learn(const QString& descrFileName, const QString& dirName, const QS
         qWarning("Cannot save model to file");
     }
 
+    printf("learning time: %lfs\n", double(clock() - t) / CLOCKS_PER_SEC);
+
     free_and_destroy_model(&model);
     destroy_param(&param);
-    free(prob.y);
+    delete [] prob.y;
     for (i = 0; i < prob.l; i++) {
-        free(prob.x[i]);
+        delete [] prob.x[i];
     }
-    free(prob.x);
+    delete [] prob.x;
 }
 
 QVector<QRect> Logic::detect(const QImage& image, struct model *model)
 {
     int i, j;
     int width = image.width();
-//    int predict_label;
     QVector<int> features;
+    QVector<double> prob;
+    QVector<int> pos;
     QVector<QRect> answer;
-    double prob[1];
+    double p;
 
-    struct feature_node *x = Malloc(struct feature_node, NUM_FEATURES + 1);
+    struct feature_node *x = new struct feature_node [NUM_FEATURES + 1];
     x[NUM_FEATURES].index = -1;
 
-    for (i = 0; i < width - PEDESTRIAN_WIDTH; i += STEP) {
-        features = getHOG(image, i, i + PEDESTRIAN_WIDTH);
+    for (i = 0; i < width - HUMAN_WIDTH; i += STEP) {
+        features = getHOG(image, i, i + HUMAN_WIDTH);
         for (j = 0; j < NUM_FEATURES; j++) {
             x[j].index = j + 1;
             x[j].value = features[j];
         }
-        //predict_label = predict(model, x);
-        predict_values(model, x, prob);
-        //printf("%lf\n", prob[0]);
-        //if (predict_label == 1) {
-        if (prob[0] > 0.0) {
-            answer.push_back(QRect(i, 0, PEDESTRIAN_WIDTH, PEDESTRIAN_HEIGHT));
-        }
+        predict_values(model, x, &p);
+
+        prob.push_back(p);
+        pos.push_back(i);
+
         features.clear();
     }
 
-    free(x);
+    double cur_max;
+    int i_max;
+    int sz;
+    sz = prob.size();
+
+    while (true) {
+        cur_max = -1000;
+        for (i = 0; i < prob.size(); i++) {
+            if (prob[i] > cur_max) {
+                cur_max = prob[i];
+                i_max = i;
+            }
+        }
+        if (cur_max < THRESHOLD) {
+            break;
+        }
+        answer.push_back(QRect(pos[i_max], 0, HUMAN_WIDTH, HUMAN_HEIGHT));
+        break;
+        prob[i_max] = 0;
+        prob[check(i_max - 1, sz)] = 0;
+        prob[check(i_max + 1, sz)] = 0;
+        prob[check(i_max - 2, sz)] = 0;
+        prob[check(i_max + 2, sz)] = 0;
+        prob[check(i_max - 3, sz)] = 0;
+        prob[check(i_max + 3, sz)] = 0;
+        prob[check(i_max - 4, sz)] = 0;
+        prob[check(i_max + 4, sz)] = 0;
+    }
+
+    delete [] x;
 
     return answer;
 }
@@ -337,8 +387,11 @@ void Logic::classify(const QString& descrFileName, const QString& dirName, const
             tmp.x1 = result[j].x() + result[j].width();
             description.push_back(tmp);
         }
-        printf("Processing %d.png\n", num);
+        //printf("Processing %d.png\n", num);
+        printf("#");
+        fflush(stdout);
     }
+    printf("\n");
 
     qSort(description.begin(), description.end());
     for (j = 0; j < description.size(); j++) {
@@ -387,7 +440,6 @@ void Logic::evaluate(const QString& ansFileName, const QString& resFileName)
         lbl.pop_back();
         ansFile.close();
     }
-    printf("%d\n", ans[ans.size()-1].num);
 
     {
         QTextStream in(&resFile);
@@ -414,7 +466,6 @@ void Logic::evaluate(const QString& ansFileName, const QString& resFileName)
         for (j = 0; j < ans.size(); j++) {
             if (ans[j].num == res[i].num) {
                 if (abs(res[i].x0 - ans[j].x0) <= 40) {
-//                    printf("%d %d\n", res[i].x0, ans[j].x0);
                     tp++;
                     lbl[j] = true;
                     ok = true;
@@ -432,6 +483,9 @@ void Logic::evaluate(const QString& ansFileName, const QString& resFileName)
 
     for (j = 0; j < lbl.size(); j++) {
         tp1 += lbl[j];
+        if (!lbl[j]) {
+            printf("%d\n", ans[j].num);
+        }
     }
 
     recall = double(tp1) / double(gt);
@@ -442,5 +496,8 @@ void Logic::evaluate(const QString& ansFileName, const QString& resFileName)
     printf("#FP=%d\n", fp);
     printf("#GT=%d\n", gt);
 
+    double f1 = 2 * double(precision * recall) / double(precision + recall);
+
     printf("Recall %lf%%\nPrecision %lf%%\n", recall * 100.0, precision * 100.0);
+    printf("F1 score: %lf\n", f1 * 100);
 }

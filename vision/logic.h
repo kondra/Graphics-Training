@@ -10,17 +10,20 @@ const double BLUE_INTENSE = 0.0721;
 
 const double PI = 3.1415926535897;
 
-const int X_SIZE = 10;
-const int Y_SIZE = 10;
+const int X_SIZE = 16;
+const int Y_SIZE = 16;
 
 const int HOG_SIZE = 8;
 
 const int STEP = 10;
 
-const int PEDESTRIAN_WIDTH = 80;
-const int PEDESTRIAN_HEIGHT = 200;
+const double EPS = 1e-8;
+const double THRESHOLD = 0.22;
 
-const int NUM_FEATURES = (PEDESTRIAN_HEIGHT / Y_SIZE) * (PEDESTRIAN_WIDTH / X_SIZE) * HOG_SIZE;
+const int HUMAN_WIDTH = 80;
+const int HUMAN_HEIGHT = 200;
+
+const int NUM_FEATURES = (HUMAN_HEIGHT / Y_SIZE) * (HUMAN_WIDTH / X_SIZE) * HOG_SIZE;
 
 class Logic {
     static double getBrightness(QRgb p);
