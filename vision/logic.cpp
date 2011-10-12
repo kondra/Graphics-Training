@@ -29,22 +29,20 @@ int Logic::check(int x, int n)
     return x;
 }
 
-void Logic::addUnitHOG(const QImage& image, QVector<int>& hist, int x0, int y0, int x1, int y1)
+int** Logic::calculateHOG(const QImage& image)
 {
     double gradX, gradY;
     double angle;
     double coef = HOG_SIZE / (2 * PI);
     int height = image.height();
     int width = image.width();
-    int h[HOG_SIZE];
+    int **hog = 0;
     int i, j;
 
-    for (i = 0; i < HOG_SIZE; i++) {
-        h[i] = 0;
-    }
-
-    for (i = x0; i < x1; i++) {
-        for (j = y0; j < y1; j++) {
+    hog = new int*[width];
+    for (i = 0; i < width; i++) {
+        hog[i] = new int[height];
+        for (j = 0; j < height; j++) {
             gradX = getBrightness(image.pixel(check(i + 1, width), check(j, height))) - getBrightness(image.pixel(check(i, width), check(j, height)));
             gradY = getBrightness(image.pixel(check(i, width), check(j + 1, height))) - getBrightness(image.pixel(check(i, width), check(j, height)));
             angle = atan2(gradY, gradX) + PI;
@@ -53,7 +51,27 @@ void Logic::addUnitHOG(const QImage& image, QVector<int>& hist, int x0, int y0, 
             }
             int k = (int)(angle * coef);
             assert(k >= 0 && k < HOG_SIZE);
-            h[k]++;
+            hog[i][j] = k;
+        }
+    }
+
+    return hog;
+}
+
+void Logic::addUnitHOG(int **hog, QVector<int>& hist, int x0, int y0, int x1, int y1)
+{
+    int h[HOG_SIZE];
+    int i, j;
+
+    assert(hog);
+
+    for (i = 0; i < HOG_SIZE; i++) {
+        h[i] = 0;
+    }
+
+    for (i = x0; i < x1; i++) {
+        for (j = y0; j < y1; j++) {
+            h[hog[i][j]]++;
         }
     }
 
@@ -62,15 +80,13 @@ void Logic::addUnitHOG(const QImage& image, QVector<int>& hist, int x0, int y0, 
     }
 }
 
-QVector<int> Logic::getHOG(const QImage& image, int x0, int x1)
+QVector<int> Logic::getHOG(int **hog, int x0, int x1, int y0, int y1)
 {
     QVector<int> hist;
 
-    int height = image.height();
-
     for (int i = x0; i < x1; i += X_SIZE) {
-        for (int j = 0; j < height - 1; j += Y_SIZE) {
-            addUnitHOG(image, hist, i, j, i + X_SIZE, j + Y_SIZE);
+        for (int j = y0; j < y1; j += Y_SIZE) {
+            addUnitHOG(hog, hist, i, j, check(i + X_SIZE, x1), check(j + Y_SIZE, y1));
         }
     }
 
@@ -127,8 +143,12 @@ void Logic::learn(const QString& descrFileName, const QString& dirName, const QS
     int i, j, j1, j2;
     int w;
 
+    int **hog;
+
     QVector<QVector<int> > trainFeatures;
     QVector<int> trainLabels;
+
+    bool f = false;
 
     for (i = 0; i < list.size(); i++) {
         curName = list.at(i);
@@ -160,8 +180,10 @@ void Logic::learn(const QString& descrFileName, const QString& dirName, const QS
             j2 = j;
         }
         assert(j1 != -1);
+        hog = calculateHOG(image);
+        f = true;
         for (j = j1; j < j2; j++) {
-            trainFeatures.push_back(getHOG(image, description[j].x0, description[j].x1));
+            trainFeatures.push_back(getHOG(hog, description[j].x0, description[j].x1, 0, image.height()));
             trainLabels.push_back(1);
         }
         w = image.width();
@@ -184,14 +206,15 @@ void Logic::learn(const QString& descrFileName, const QString& dirName, const QS
         trainLabels.push_back(-1);
         */
         if (description[j1].x0 + 2 * HUMAN_WIDTH + 1 < w) {
-            trainFeatures.push_back(getHOG(image, description[j1].x0 + HUMAN_WIDTH + 1, description[j1].x0 + 2 * HUMAN_WIDTH + 1));
+            trainFeatures.push_back(getHOG(hog, description[j1].x0 + HUMAN_WIDTH + 1, description[j1].x0 + 2 * HUMAN_WIDTH + 1, 0, image.height()));
         } else if (description[j1].x0 - HUMAN_WIDTH - 1 >= 0) {
-            trainFeatures.push_back(getHOG(image, description[j1].x0 - HUMAN_WIDTH - 1, description[j1].x0 - 1));
+            trainFeatures.push_back(getHOG(hog, description[j1].x0 - HUMAN_WIDTH - 1, description[j1].x0 - 1, 0, image.height()));
         }
         trainLabels.push_back(-1);
         //printf("Processing %d.png\n", num);
         printf("#");
         fflush(stdout);
+        delete [] hog;
     }
     printf("\n");
 
@@ -251,8 +274,10 @@ QVector<QRect> Logic::detect(const QImage& image, struct model *model)
     struct feature_node *x = new struct feature_node [NUM_FEATURES + 1];
     x[NUM_FEATURES].index = -1;
 
+    int **hog = calculateHOG(image);
+
     for (i = 0; i < width - HUMAN_WIDTH; i += STEP) {
-        features = getHOG(image, i, i + HUMAN_WIDTH);
+        features = getHOG(hog, i, i + HUMAN_WIDTH, 0, image.height());
         for (j = 0; j < NUM_FEATURES; j++) {
             x[j].index = j + 1;
             x[j].value = features[j];
@@ -265,10 +290,24 @@ QVector<QRect> Logic::detect(const QImage& image, struct model *model)
         features.clear();
     }
 
+    delete [] hog;
+
     double cur_max;
     int i_max;
     int sz;
     sz = prob.size();
+
+ //   printf("%d\n", sz);
+/*   for (i = 0; i < sz; i++) {
+        if (prob[i] > THRESHOLD) {
+       //     printf("%lf\n", prob[i]);
+            answer.push_back(QRect(pos[i], 0, HUMAN_WIDTH, HUMAN_HEIGHT));
+        }
+    }
+//    printf("\n");
+//    printf("\n");
+//    return answer;
+//    */
 
     while (true) {
         cur_max = -1000;
@@ -278,20 +317,16 @@ QVector<QRect> Logic::detect(const QImage& image, struct model *model)
                 i_max = i;
             }
         }
+   //     printf("%lf\n", cur_max);
         if (cur_max < THRESHOLD) {
             break;
         }
         answer.push_back(QRect(pos[i_max], 0, HUMAN_WIDTH, HUMAN_HEIGHT));
-        break;
         prob[i_max] = 0;
-        prob[check(i_max - 1, sz)] = 0;
-        prob[check(i_max + 1, sz)] = 0;
-        prob[check(i_max - 2, sz)] = 0;
-        prob[check(i_max + 2, sz)] = 0;
-        prob[check(i_max - 3, sz)] = 0;
-        prob[check(i_max + 3, sz)] = 0;
-        prob[check(i_max - 4, sz)] = 0;
-        prob[check(i_max + 4, sz)] = 0;
+        for (i = 0; i < 20; i++) {
+            prob[check(i_max - i, sz)] = 0;
+            prob[check(i_max + i, sz)] = 0;
+        }
     }
 
     delete [] x;
