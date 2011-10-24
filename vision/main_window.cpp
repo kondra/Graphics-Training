@@ -1,7 +1,6 @@
 #include <QtGui>
 
 #include "main_window.h"
-#include "logic.h"
 
 MainWindow::MainWindow(const QString& imageFileName)
 {

@@ -1,3 +1,5 @@
+CONFIG   += console
+
 SOURCES += \
     main.cpp \
     main_window.cpp \

@@ -18,7 +18,8 @@ int main(int argc, char *argv[])
     if (args.at(1) == "--help") {
         printf( "Usage: vision OPTION [FILE] ...\n"
                 "Available options:\n"
-                "--learn DIR FILE1 FILE2      learn SVM, where:\n"
+                "--learn [-b] DIR FILE1 FILE2   learn SVM, where:\n"
+                "                               -b    - specify this if you want to use bootstrapping\n"
                 "                               DIR   - directory with training data\n"
                 "                               FILE1 - human description file\n"
                 "                               FILE2 - where to save SVM model\n"
@@ -36,14 +37,24 @@ int main(int argc, char *argv[])
               );
         return 0;
     } else if (args.at(1) == "--learn") {
-        if (args.size() != 5) {
+        int i;
+        if (args.size() > 6 || args.size() < 5) {
             printf("Wrong parameters\n");
             return 0;
         }
-        QString dirName = args.at(2);
-        QString descrFileName = args.at(3);
-        QString coefFileName = args.at(4);
-        Logic::learn(descrFileName, dirName, coefFileName);
+        if (args.size() == 6) {
+            i = 1;
+        } else {
+            i = 0;
+        }
+        QString dirName = args.at(i + 2);
+        QString descrFileName = args.at(i + 3);
+        QString coefFileName = args.at(i + 4);
+        if (i) {
+            Logic::bootStrap(descrFileName, dirName, coefFileName);
+        } else {
+            Logic::learn(descrFileName, dirName, coefFileName);
+        }
     } else if (args.at(1) == "--classify") {
         if (args.size() != 5) {
             printf("Wrong parameters\n");
