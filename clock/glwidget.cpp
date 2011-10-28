@@ -4,18 +4,19 @@
 #include <math.h>
 
 #include "glwidget.h"
-#include "qtlogo.h"
+#include "clock.h"
 
 GLWidget::GLWidget(QWidget *parent)
     : QGLWidget(QGLFormat(QGL::SampleBuffers), parent)
 {
-    logo = 0;
+    clock = 0;
     xRot = 0;
     yRot = 0;
     zRot = 0;
 
-    qtGreen = QColor::fromCmykF(0.40, 0.0, 1.0, 0.0);
-    qtPurple = QColor::fromCmykF(0.39, 0.39, 0.0, 0.0);
+    timer = new QTimer(this);
+    connect(timer, SIGNAL(timeout()), this, SLOT(updateGL()));
+    timer->start(1000);
 }
 
 GLWidget::~GLWidget()
@@ -72,10 +73,9 @@ void GLWidget::setZRotation(int angle)
 
 void GLWidget::initializeGL()
 {
-    qglClearColor(qtPurple.dark());
+    qglClearColor(qRgb(171, 205, 239));
 
-    logo = new QtLogo(this, 64);
-    logo->setColor(qtGreen.dark());
+    clock = new Clock(this, 256);
 
     glEnable(GL_DEPTH_TEST);
     glEnable(GL_CULL_FACE);
@@ -95,7 +95,7 @@ void GLWidget::paintGL()
     glRotatef(xRot / 16.0, 1.0, 0.0, 0.0);
     glRotatef(yRot / 16.0, 0.0, 1.0, 0.0);
     glRotatef(zRot / 16.0, 0.0, 0.0, 1.0);
-    logo->draw();
+    clock->draw();
 }
 
 void GLWidget::resizeGL(int width, int height)

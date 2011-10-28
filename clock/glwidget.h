@@ -3,7 +3,7 @@
 
 #include <QGLWidget>
 
-class QtLogo;
+class Clock;
 
 class GLWidget : public QGLWidget
 {
@@ -34,13 +34,14 @@ protected:
     void mouseMoveEvent(QMouseEvent *event);
 
 private:
-    QtLogo *logo;
+    Clock *clock;
+    QTimer *timer;
+
     int xRot;
     int yRot;
     int zRot;
+
     QPoint lastPos;
-    QColor qtGreen;
-    QColor qtPurple;
 };
 
 #endif

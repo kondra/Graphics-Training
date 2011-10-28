@@ -1,12 +1,11 @@
 HEADERS       = glwidget.h \
                 window.h \
-                qtlogo.h
+                clock.h
 
 SOURCES       = glwidget.cpp \
                 main.cpp \
                 window.cpp \
-                qtlogo.cpp
+                clock.cpp
 
 QT           += opengl
-
-CONFIG += console
+CONFIG       += console
