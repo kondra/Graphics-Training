@@ -29,7 +29,12 @@ private:
     RectPrism *minutePointer;
     RectPrism *hourPointer;
 
+    RectPrism **hourMarks;
+    RectPrism **minuteMarks;
+
     RectTorus *body;
+    RectTorus *center;
+    RectTorus *center2;
 
     Geometry *geom;
 };

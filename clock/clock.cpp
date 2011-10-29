@@ -141,6 +141,7 @@ void Patch::draw() const
 {
     glPushMatrix();
     qMultMatrix(mat);
+
     glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT_AND_DIFFUSE, faceColor);
 
     const GLushort *indices = geom->faces.constData();
@@ -335,13 +336,34 @@ void Clock::buildGeometry(int divisions, qreal scale)
     minutePointer = new RectPrism(geom, 0.008, 0.23, 0.008);
     minutePointer->setColor(Qt::black);
 
-    hourPointer = new RectPrism (geom, 0.01, 0.18, 0.01);
+    hourPointer = new RectPrism(geom, 0.01, 0.18, 0.01);
     hourPointer->setColor(Qt::black);
 
     translatePointers(true);
 
-    body = new RectTorus(geom, 0.28, 0.30, 0.05, divisions);
-    body->setColor(Qt::white);
+//    body = new RectTorus(geom, 0.28, 0.30, 0.02, divisions);
+    body = new RectTorus(geom, 0, 0.30, 0.02, divisions);
+    body->translate(QVector3D(0.0, 0.0, -0.016));
+    body->setColor(qRgba(255, 255, 255, 4));
+
+    center = new RectTorus(geom, 0.0, 0.01, 0.05, divisions);
+    center->setColor(Qt::black);
+
+    center2 = new RectTorus(geom, 0.0, 0.05, 0.02, divisions);
+    center2->translate(QVector3D(0.0, 0.0, -0.016));
+    center2->setColor(Qt::white);
+
+    qreal angle;
+    QVector3D z(0.0, 0.0, 1.0);
+    QVector3D shift(0.0, 0.2, -0.007);
+    hourMarks = new RectPrism*[12];
+    for (int i = 0; i < 12; ++i) {
+        angle = (360.0 / 12.0) * i;
+        hourMarks[i] = new RectPrism(geom, 0.005, 0.02, 0.01);
+        hourMarks[i]->rotate(angle, z);
+        hourMarks[i]->translate(shift);
+        hourMarks[i]->setColor(Qt::black);
+    }
 
     rotatePointers();
 
@@ -351,9 +373,9 @@ void Clock::buildGeometry(int divisions, qreal scale)
 void Clock::translatePointers(bool direction)
 {
     int coef = direction ? 1 : -1;
-    secondPointer->translate(QVector3D(0.0, coef * (0.25 / 2.0 - 0.006), coef * (0.002)));
-    minutePointer->translate(QVector3D(0.0, coef * (0.23 / 2.0 - 0.006), coef * (0.005 + 0.004)));
-    hourPointer->translate(QVector3D(0.0, coef * (0.18 / 2.0 - 0.006), coef * (0.005 + 0.008 + 0.006)));
+    secondPointer->translate(QVector3D(0.0, coef * (0.25 / 2.0 - 0.006), coef * (0.005 + 0.008 + 0.007)));
+    minutePointer->translate(QVector3D(0.0, coef * (0.23 / 2.0 - 0.006), coef * (0.005 + 0.007)));
+    hourPointer->translate(QVector3D(0.0, coef * (0.18 / 2.0 - 0.006), coef * (0.002)));
 }
 
 void Clock::rotatePointers()
@@ -399,14 +421,30 @@ void Clock::draw()
     glEnableClientState(GL_VERTEX_ARRAY);
     glEnableClientState(GL_NORMAL_ARRAY);
 
-    for (int i = 0; i < body->parts.count(); ++i)
-        body->parts[i]->draw();
-    for (int i = 0; i < hourPointer->parts.count(); ++i)
+    int i, j;
+
+    for (i = 0; i < center->parts.count(); ++i)
+        center->parts[i]->draw();
+    for (i = 0; i < center2->parts.count(); ++i)
+        center2->parts[i]->draw();
+
+    for (i = 0; i < 12; ++i) {
+        for (j = 0; j < hourMarks[i]->parts.count(); ++j)
+            hourMarks[i]->parts[j]->draw();
+    }
+
+    for (i = 0; i < hourPointer->parts.count(); ++i)
         hourPointer->parts[i]->draw();
-    for (int i = 0; i < minutePointer->parts.count(); ++i)
+    for (i = 0; i < minutePointer->parts.count(); ++i)
         minutePointer->parts[i]->draw();
-    for (int i = 0; i < secondPointer->parts.count(); ++i)
+    for (i = 0; i < secondPointer->parts.count(); ++i)
         secondPointer->parts[i]->draw();
+
+    glEnable(GL_BLEND);
+    glBlendFunc(GL_DST_ALPHA,GL_DST_ALPHA);
+    for (i = 0; i < body->parts.count(); ++i)
+        body->parts[i]->draw();
+    glDisable(GL_BLEND);
 
     glDisableClientState(GL_VERTEX_ARRAY);
     glDisableClientState(GL_NORMAL_ARRAY);
