@@ -1,6 +1,7 @@
 #include <QGLWidget>
 #include <QMatrix4x4>
 #include <QVector3D>
+#include <QVector2D>
 #include <QTime>
 
 #include <qmath.h>
@@ -21,6 +22,7 @@ struct Geometry
     QVector<GLushort> faces;
     QVector<QVector3D> vertices;
     QVector<QVector3D> normals;
+    QVector<QVector2D> texCoords;
     void appendSmooth(const QVector3D &a, const QVector3D &n, int from);
     void appendFaceted(const QVector3D &a, const QVector3D &n);
     void finalize();
@@ -31,6 +33,7 @@ void Geometry::loadArrays() const
 {
     glVertexPointer(3, GL_FLOAT, 0, vertices.constData());
     glNormalPointer(GL_FLOAT, 0, normals.constData());
+    glTexCoordPointer(2, GL_FLOAT, 0, texCoords.constData());
 }
 
 void Geometry::finalize()
@@ -59,6 +62,7 @@ void Geometry::appendSmooth(const QVector3D &a, const QVector3D &n, int from)
         // its corresponding normal
         v = vertices.count();
         vertices.append(a);
+        texCoords.append(a.toVector2D());
         normals.append(n);
     }
     else
@@ -78,6 +82,7 @@ void Geometry::appendFaceted(const QVector3D &a, const QVector3D &n)
     int v = vertices.count();
     vertices.append(a);
     normals.append(n);
+    texCoords.append(a.toVector2D());
     faces.append(v);
 }
 
@@ -100,6 +105,7 @@ public:
     GLfloat faceColor[4];
     QMatrix4x4 mat;
     Smoothing sm;
+    bool metal;
     Geometry *geom;
 };
 
@@ -108,6 +114,7 @@ Patch::Patch(Geometry *g)
    , count(0)
    , initv(g->vertices.count())
    , sm(Patch::Smooth)
+   , metal(false)
    , geom(g)
 {
     qSetColor(faceColor, QColor(Qt::darkGray));
@@ -143,6 +150,14 @@ void Patch::draw() const
     qMultMatrix(mat);
 
     glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT_AND_DIFFUSE, faceColor);
+    if (metal) {
+        glMaterialf(GL_FRONT_AND_BACK, GL_SHININESS, 128);
+        glMaterialfv(GL_FRONT_AND_BACK, GL_SPECULAR, faceColor);
+    } else {
+        glMaterialf(GL_FRONT_AND_BACK, GL_SHININESS, 0);
+        GLfloat def_spec[] = {0, 0, 0, 1};
+        glMaterialfv(GL_FRONT_AND_BACK, GL_SPECULAR, def_spec);
+    }
 
     const GLushort *indices = geom->faces.constData();
     glDrawElements(GL_TRIANGLES, count, GL_UNSIGNED_SHORT, indices + start);
@@ -212,6 +227,11 @@ public:
     {
         for (int i = 0; i < parts.count(); ++i)
             qSetColor(parts[i]->faceColor, c);
+    }
+    void setMetal()
+    {
+        for (int i = 0; i < parts.count(); ++i)
+            parts[i]->metal = true;
     }
 
     // No special Rectoid destructor - the parts are fetched out of this member
@@ -320,6 +340,12 @@ Clock::~Clock()
     qDeleteAll(minutePointer->parts);
     qDeleteAll(secondPointer->parts);
 
+    for (int i = 0; i < 12; ++i) {
+        qDeleteAll(hourMarks[i]->parts);
+        delete hourMarks[i];
+    }
+    delete hourMarks;
+
     delete hourPointer;
     delete minutePointer;
     delete secondPointer;
@@ -332,26 +358,30 @@ void Clock::buildGeometry(int divisions, qreal scale)
 
     secondPointer = new RectPrism(geom, 0.005, 0.25, 0.005);
     secondPointer->setColor(Qt::red);
+    secondPointer->setMetal();
 
     minutePointer = new RectPrism(geom, 0.008, 0.23, 0.008);
     minutePointer->setColor(Qt::black);
+    minutePointer->setMetal();
 
     hourPointer = new RectPrism(geom, 0.01, 0.18, 0.01);
     hourPointer->setColor(Qt::black);
+    hourPointer->setMetal();
 
     translatePointers(true);
 
-//    body = new RectTorus(geom, 0.28, 0.30, 0.02, divisions);
-    body = new RectTorus(geom, 0, 0.30, 0.02, divisions);
+    body = new RectTorus(geom, 0.05, 0.30, 0.02, divisions);
     body->translate(QVector3D(0.0, 0.0, -0.016));
-    body->setColor(qRgba(255, 255, 255, 4));
+    body->setColor(qRgba(100, 75, 255, 70));
 
     center = new RectTorus(geom, 0.0, 0.01, 0.05, divisions);
     center->setColor(Qt::black);
+    center->setMetal();
 
     center2 = new RectTorus(geom, 0.0, 0.05, 0.02, divisions);
     center2->translate(QVector3D(0.0, 0.0, -0.016));
     center2->setColor(Qt::white);
+    center2->setMetal();
 
     qreal angle;
     QVector3D z(0.0, 0.0, 1.0);
@@ -363,6 +393,7 @@ void Clock::buildGeometry(int divisions, qreal scale)
         hourMarks[i]->rotate(angle, z);
         hourMarks[i]->translate(shift);
         hourMarks[i]->setColor(Qt::black);
+        hourMarks[i]->setMetal();
     }
 
     rotatePointers();
@@ -420,13 +451,20 @@ void Clock::draw()
 
     glEnableClientState(GL_VERTEX_ARRAY);
     glEnableClientState(GL_NORMAL_ARRAY);
+    glEnableClientState(GL_TEXTURE_COORD_ARRAY);
 
     int i, j;
 
-    for (i = 0; i < center->parts.count(); ++i)
+    for (i = 0; i < center->parts.count(); ++i) {
         center->parts[i]->draw();
-    for (i = 0; i < center2->parts.count(); ++i)
+    }
+
+    glBindTexture(GL_TEXTURE_2D, metalTexture);
+    glEnable(GL_TEXTURE_2D);
+    for (i = 0; i < center2->parts.count(); ++i) {
         center2->parts[i]->draw();
+    }
+    glDisable(GL_TEXTURE_2D);
 
     for (i = 0; i < 12; ++i) {
         for (j = 0; j < hourMarks[i]->parts.count(); ++j)
@@ -440,12 +478,23 @@ void Clock::draw()
     for (i = 0; i < secondPointer->parts.count(); ++i)
         secondPointer->parts[i]->draw();
 
+    glBindTexture(GL_TEXTURE_2D, glassTexture);
+    glEnable(GL_TEXTURE_2D);
     glEnable(GL_BLEND);
-    glBlendFunc(GL_DST_ALPHA,GL_DST_ALPHA);
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE);
     for (i = 0; i < body->parts.count(); ++i)
         body->parts[i]->draw();
     glDisable(GL_BLEND);
+    glDisable(GL_TEXTURE_2D);
 
     glDisableClientState(GL_VERTEX_ARRAY);
     glDisableClientState(GL_NORMAL_ARRAY);
+    glDisableClientState(GL_TEXTURE_COORD_ARRAY);
 }
+
+void Clock::loadTex(GLuint _glassTexture, GLuint _metalTexture)
+{
+    glassTexture = _glassTexture;
+    metalTexture = _metalTexture;
+}
+

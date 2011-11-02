@@ -75,7 +75,11 @@ void GLWidget::initializeGL()
 {
     qglClearColor(qRgb(171, 205, 239));
 
+    GLuint glassTexture = bindTexture(QImage("glass.jpg"));
+    GLuint metalTexture = bindTexture(QImage("solar.jpg"));
+
     clock = new Clock(this, 256);
+    clock->loadTex(glassTexture, metalTexture);
 
     glEnable(GL_DEPTH_TEST);
     glEnable(GL_CULL_FACE);
@@ -83,7 +87,7 @@ void GLWidget::initializeGL()
     glEnable(GL_LIGHTING);
     glEnable(GL_LIGHT0);
     glEnable(GL_MULTISAMPLE);
-    static GLfloat lightPosition[4] = { 0.5, 5.0, 7.0, 1.0 };
+    static GLfloat lightPosition[4] = { 0.5, 15.0, 7.0, 1.0 };
     glLightfv(GL_LIGHT0, GL_POSITION, lightPosition);
 }
 

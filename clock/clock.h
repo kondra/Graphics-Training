@@ -16,6 +16,7 @@ public:
     Clock(QObject *parent, int d = 128, qreal s = 1.0);
     ~Clock();
     void draw();
+    void loadTex(GLuint _glassTexture, GLuint _metalTexture);
 private:
     void buildGeometry(int d, qreal s);
     void translatePointers(bool direction);
@@ -37,6 +38,9 @@ private:
     RectTorus *center2;
 
     Geometry *geom;
+
+    GLuint glassTexture;
+    GLuint metalTexture;
 };
 
 #endif // CLOCK_H
