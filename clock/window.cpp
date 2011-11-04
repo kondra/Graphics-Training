@@ -3,6 +3,8 @@
 #include "glwidget.h"
 #include "window.h"
 
+#define SLIDER
+
 Window::Window()
 {
     glWidget = new GLWidget;
@@ -18,11 +20,13 @@ Window::Window()
     connect(zSlider, SIGNAL(valueChanged(int)), glWidget, SLOT(setZRotation(int)));
     connect(glWidget, SIGNAL(zRotationChanged(int)), zSlider, SLOT(setValue(int)));
 
-    QHBoxLayout *mainLayout = new QHBoxLayout;
+    QVBoxLayout *mainLayout = new QVBoxLayout;
     mainLayout->addWidget(glWidget);
+#ifdef SLIDER
     mainLayout->addWidget(xSlider);
     mainLayout->addWidget(ySlider);
     mainLayout->addWidget(zSlider);
+#endif
     setLayout(mainLayout);
 
     xSlider->setValue(15 * 16);
@@ -33,7 +37,7 @@ Window::Window()
 
 QSlider *Window::createSlider()
 {
-    QSlider *slider = new QSlider(Qt::Vertical);
+    QSlider *slider = new QSlider(Qt::Horizontal);
     slider->setRange(0, 360 * 16);
     slider->setSingleStep(16);
     slider->setPageStep(15 * 16);
