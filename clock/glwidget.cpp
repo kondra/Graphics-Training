@@ -21,6 +21,8 @@ GLWidget::GLWidget(QWidget *parent)
 
 GLWidget::~GLWidget()
 {
+    deleteTexture(glassTexture);
+    deleteTexture(metalTexture);
 }
 
 QSize GLWidget::minimumSizeHint() const
@@ -75,8 +77,8 @@ void GLWidget::initializeGL()
 {
     qglClearColor(qRgb(171, 205, 239));
 
-    GLuint glassTexture = bindTexture(QImage("glass.jpg"));
-    GLuint metalTexture = bindTexture(QImage("solar.jpg"));
+    glassTexture = bindTexture(QImage("glass.jpg"));
+    metalTexture = bindTexture(QImage("solar.jpg"));
 
     clock = new Clock(this, 256);
     clock->loadTex(glassTexture, metalTexture);
