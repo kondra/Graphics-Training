@@ -42,6 +42,9 @@ private:
     int zRot;
 
     QPoint lastPos;
+
+    GLuint glassTexture;
+    GLuint metalTexture;
 };
 
 #endif
