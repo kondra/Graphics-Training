@@ -11,13 +11,9 @@
 
 #include "clock.h"
 
-//#define SHADERS
+#define SHADERS
 
 #ifdef SHADERS
-
-#define PROGRAM_VERTEX_ATTRIBUTE 0
-#define PROGRAM_TEXCOORD_ATTRIBUTE 1
-
 QGLShaderProgram *program;
 #endif
 
@@ -380,45 +376,14 @@ Clock::Clock(QObject *parent, int divisions, qreal scale)
 
 #ifdef SHADERS
     QGLShader *vshader = new QGLShader(QGLShader::Vertex, this);
-//    const char *vsrc =
-//        "attribute highp vec4 vertex;\n"
-//        "attribute mediump vec4 texCoord;\n"
-//        "varying mediump vec4 texc;\n"
-//        "uniform mediump mat4 matrix;\n"
-//        "void main(void)\n"
-//        "{\n"
-//        "    gl_Position = matrix * vertex;\n"
-//        "    texc = texCoord;\n"
-//        "}\n";
-//    const char *vsrc =
-//        "void main(void)\n"
-//        "{\n"
-//        "    gl_Position = gl_ModelViewProjectionMatrix * gl_Vertex;\n"
-//        "}\n";
-//    vshader->compileSourceCode(vsrc);
     vshader->compileSourceFile("test.vsh");
 
     QGLShader *fshader = new QGLShader(QGLShader::Fragment, this);
-//    const char *fsrc =
-//        "uniform sampler2D texture;\n"
-//        "varying mediump vec4 texc;\n"
-//        "void main(void)\n"
-//        "{\n"
-//        "    gl_FragColor = texture2D(texture, texc.st);\n"
-//        "}\n";
-//    const char *fsrc =
-//        "void main(void)\n"
-//        "{\n"
-//        "    gl_FragColor = vec4(1.0, 0.0, 0.0, 1.0);\n"
-//        "}\n";
-//    fshader->compileSourceCode(fsrc);
     fshader->compileSourceFile("test.fsh");
 
     program = new QGLShaderProgram(this);
     program->addShader(vshader);
     program->addShader(fshader);
-//    program->bindAttributeLocation("vertex", PROGRAM_VERTEX_ATTRIBUTE);
-//    program->bindAttributeLocation("texCoord", PROGRAM_TEXCOORD_ATTRIBUTE);
     program->link();
 #endif
 }
@@ -462,26 +427,32 @@ void Clock::buildGeometry(int divisions, qreal scale)
 
     translatePointers(true);
 
-    body = new RectTorus(geom, 0.05, 0.30, 0.02, divisions);
+    body = new RectTorus(geom, 0.10, 0.30, 0.02, divisions);
     body->translate(QVector3D(0.0, 0.0, -0.016));
-    body->setColor(qRgba(100, 75, 255, 70));
+    body->setColor(qRgba(100, 75, 155, 70));
 
     center = new RectTorus(geom, 0.0, 0.01, 0.05, divisions);
     center->setColor(Qt::black);
     center->setMetal();
 
-    center2 = new RectTorus(geom, 0.0, 0.05, 0.02, divisions);
+    center2 = new RectTorus(geom, 0.0, 0.10, 0.02, divisions);
     center2->translate(QVector3D(0.0, 0.0, -0.016));
     center2->setColor(Qt::white);
     center2->setMetal();
 
     qreal angle;
     QVector3D z(0.0, 0.0, 1.0);
-    QVector3D shift(0.0, 0.2, -0.007);
+    QVector3D shift(0.0, 0.20, -0.007);
     hourMarks = new RectPrism*[12];
-    for (int i = 0; i < 12; ++i) {
+
+    hourMarks[0] = new RectPrism(geom, 0.005, 0.06, 0.01);
+    hourMarks[0]->translate(QVector3D(0.0, 0.19, -0.007));
+    hourMarks[0]->setColor(Qt::black);
+    hourMarks[0]->setMetal();
+
+    for (int i = 1; i < 12; ++i) {
         angle = (360.0 / 12.0) * i;
-        hourMarks[i] = new RectPrism(geom, 0.005, 0.02, 0.01);
+        hourMarks[i] = new RectPrism(geom, 0.005, 0.04, 0.01);
         hourMarks[i]->rotate(angle, z);
         hourMarks[i]->translate(shift);
         hourMarks[i]->setColor(Qt::black);
