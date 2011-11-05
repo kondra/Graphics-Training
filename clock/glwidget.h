@@ -20,11 +20,13 @@ public slots:
     void setXRotation(int angle);
     void setYRotation(int angle);
     void setZRotation(int angle);
+    void setScale(int angle);
 
 signals:
     void xRotationChanged(int angle);
     void yRotationChanged(int angle);
     void zRotationChanged(int angle);
+    void scaleChanged(int _scale);
 
 protected:
     void initializeGL();
@@ -32,6 +34,7 @@ protected:
     void resizeGL(int width, int height);
     void mousePressEvent(QMouseEvent *event);
     void mouseMoveEvent(QMouseEvent *event);
+    void wheelEvent(QWheelEvent *event);
 
 private:
     Clock *clock;
@@ -40,6 +43,7 @@ private:
     int xRot;
     int yRot;
     int zRot;
+    float scale;
 
     QPoint lastPos;
 

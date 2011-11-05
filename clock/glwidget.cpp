@@ -1,7 +1,8 @@
 #include <QtGui>
 #include <QtOpenGL>
 
-#include <math.h>
+#include <cmath>
+#include <cstdio>
 
 #include "glwidget.h"
 #include "clock.h"
@@ -13,6 +14,7 @@ GLWidget::GLWidget(QWidget *parent)
     xRot = 0;
     yRot = 0;
     zRot = 0;
+    scale = 1;
 
     timer = new QTimer(this);
     connect(timer, SIGNAL(timeout()), this, SLOT(updateGL()));
@@ -73,6 +75,18 @@ void GLWidget::setZRotation(int angle)
     }
 }
 
+void GLWidget::setScale(int _scale)
+{
+    if (_scale != scale) {
+        float __scale = _scale * 0.01;
+        if (__scale >= 1.0 && __scale <= 1.66) {
+            scale = __scale;
+            emit scaleChanged(_scale);
+            updateGL();
+        }
+    }
+}
+
 void GLWidget::initializeGL()
 {
     qglClearColor(qRgb(171, 205, 239));
@@ -101,6 +115,7 @@ void GLWidget::paintGL()
     glRotatef(xRot / 16.0, 1.0, 0.0, 0.0);
     glRotatef(yRot / 16.0, 0.0, 1.0, 0.0);
     glRotatef(zRot / 16.0, 0.0, 0.0, 1.0);
+    glScalef(scale, scale, scale);
     clock->draw();
 }
 
@@ -133,4 +148,14 @@ void GLWidget::mouseMoveEvent(QMouseEvent *event)
         setZRotation(zRot + 8 * dx);
     }
     lastPos = event->pos();
+}
+
+void GLWidget::wheelEvent(QWheelEvent *event)
+{
+    float _scale = scale + event->delta() * 0.001;
+    if (_scale > 1.0 && _scale < 1.66) {
+        scale = _scale;
+        emit scaleChanged(scale);
+        updateGL();
+    }
 }
