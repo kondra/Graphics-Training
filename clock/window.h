@@ -23,6 +23,8 @@ private:
     QSlider *xSlider;
     QSlider *ySlider;
     QSlider *zSlider;
+
+    QSlider *scaleSlider;
 };
 
 #endif
