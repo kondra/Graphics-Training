@@ -11,7 +11,7 @@
 
 #include "clock.h"
 
-#define SHADERS
+//#define SHADERS
 
 #ifdef SHADERS
 QGLShaderProgram *program;
@@ -39,24 +39,9 @@ struct Geometry
 
 void Geometry::loadArrays() const
 {
-#ifdef SHADERS
-//    program->enableAttributeArray(PROGRAM_VERTEX_ATTRIBUTE);
-//    program->enableAttributeArray(PROGRAM_TEXCOORD_ATTRIBUTE);
-//
-//    program->setAttributeArray(PROGRAM_VERTEX_ATTRIBUTE, vertices.constData());
-//    program->setAttributeArray(PROGRAM_TEXCOORD_ATTRIBUTE, texCoords.constData());
-//
-//    program->disableAttributeArray(PROGRAM_VERTEX_ATTRIBUTE);
-//    program->disableAttributeArray(PROGRAM_TEXCOORD_ATTRIBUTE);
-
     glVertexPointer(3, GL_FLOAT, 0, vertices.constData());
     glNormalPointer(GL_FLOAT, 0, normals.constData());
     glTexCoordPointer(2, GL_FLOAT, 0, texCoords.constData());
-#else
-    glVertexPointer(3, GL_FLOAT, 0, vertices.constData());
-    glNormalPointer(GL_FLOAT, 0, normals.constData());
-    glTexCoordPointer(2, GL_FLOAT, 0, texCoords.constData());
-#endif
 }
 
 void Geometry::finalize()
@@ -169,7 +154,6 @@ static inline void qMultMatrix(const QMatrix4x4 &mat)
 
 void Patch::draw() const
 {
-#ifdef SHADERS
     glPushMatrix();
     qMultMatrix(mat);
 
@@ -187,25 +171,6 @@ void Patch::draw() const
     glDrawElements(GL_TRIANGLES, count, GL_UNSIGNED_SHORT, indices + start);
 
     glPopMatrix();
-#else
-    glPushMatrix();
-    qMultMatrix(mat);
-
-    glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT_AND_DIFFUSE, faceColor);
-    if (metal) {
-        glMaterialf(GL_FRONT_AND_BACK, GL_SHININESS, 128);
-        glMaterialfv(GL_FRONT_AND_BACK, GL_SPECULAR, faceColor);
-    } else {
-        glMaterialf(GL_FRONT_AND_BACK, GL_SHININESS, 0);
-        GLfloat def_spec[] = {0, 0, 0, 1};
-        glMaterialfv(GL_FRONT_AND_BACK, GL_SPECULAR, def_spec);
-    }
-
-    const GLushort *indices = geom->faces.constData();
-    glDrawElements(GL_TRIANGLES, count, GL_UNSIGNED_SHORT, indices + start);
-
-    glPopMatrix();
-#endif
 }
 
 void Patch::addTri(const QVector3D &a, const QVector3D &b, const QVector3D &c, const QVector3D &n)
@@ -541,18 +506,6 @@ void Clock::draw()
     for (i = 0; i < secondPointer->parts.count(); ++i)
         secondPointer->parts[i]->draw();
 
-#ifdef SHADERS
-//    program->bind();
-//    program->setUniformValue("ScaleFactor", GLfloat(0.5));
-//    program->setUniformValue("BrickColor", QVector3D(1.0, 0.3, 0.2));
-//    program->setUniformValue("MortarColor", QVector3D(0.85, 0.86, 0.84));
-//    program->setUniformValue("BrickSize", QVector2D(0.030, 0.015));
-//    program->setUniformValue("BrickPct", QVector2D(0.090, 0.085));
-//    program->setUniformValue("MortarPct", QVector2D(0.2, 0.2));
-//    program->setUniformValue("SkyColor", QVector3D(1.0, 0.3, 0.2));
-//    program->setUniformValue("GroundColor", QVector3D(0.85, 0.86, 0.84));
-//    program->setUniformValue("LightPosition", QVector4D(0.5, 15.0, 7.0, 1.0).toVector3D());
-#endif
     glBindTexture(GL_TEXTURE_2D, glassTexture);
     glEnable(GL_TEXTURE_2D);
     glEnable(GL_BLEND);
@@ -561,9 +514,6 @@ void Clock::draw()
         body->parts[i]->draw();
     glDisable(GL_BLEND);
     glDisable(GL_TEXTURE_2D);
-#ifdef SHADERS
-//    program->release();
-#endif
 
     glDisableClientState(GL_VERTEX_ARRAY);
     glDisableClientState(GL_NORMAL_ARRAY);

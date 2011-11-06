@@ -79,7 +79,7 @@ void GLWidget::setScale(int _scale)
 {
     if (_scale != scale) {
         float __scale = _scale * 0.01;
-        if (__scale >= 1.0 && __scale <= 1.66) {
+        if (__scale >= 0.5) {
             scale = __scale;
             emit scaleChanged(_scale);
             updateGL();
@@ -153,7 +153,7 @@ void GLWidget::mouseMoveEvent(QMouseEvent *event)
 void GLWidget::wheelEvent(QWheelEvent *event)
 {
     float _scale = scale + event->delta() * 0.001;
-    if (_scale > 1.0 && _scale < 1.66) {
+    if (_scale > 0.5) {
         scale = _scale;
         emit scaleChanged(scale);
         updateGL();
