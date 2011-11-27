@@ -95,8 +95,8 @@ void GLWidget::initializeGL()
 {
     qglClearColor(qRgb(171, 205, 239));
 
-    glassTexture = bindTexture(QImage("glass.jpg"));
-    metalTexture = bindTexture(QImage("solar.jpg"));
+    glassTexture = bindTexture(QImage(":/images/glass.jpg"));
+    metalTexture = bindTexture(QImage(":/images/solar.jpg"));
 
     clock = new Clock(this, 256);
     clock->loadTex(glassTexture, metalTexture);

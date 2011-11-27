@@ -59,6 +59,11 @@ void Window::keyPressEvent(QKeyEvent *e)
 {
     if (e->key() == Qt::Key_Escape)
         close();
-    else
+    else if (e->key() == Qt::Key_Space) {
+        if (isFullScreen())
+            showNormal();
+        else
+            showFullScreen();
+    } else
         QWidget::keyPressEvent(e);
 }
